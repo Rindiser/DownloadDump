@@ -4,11 +4,9 @@
   "description": "Download av GBIF dumpen til server",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/app1.js -e js",
-    "tus": "nodemon src/TUS_App.js -e js",
+    "start": "node src/app.js",
     "fe": "nodemon src/fetchApp.js -e js",
-    "unzip": "nodemon src/utils/unZip.js -e js"
+
   },
   "author": "",
   "license": "ISC",
