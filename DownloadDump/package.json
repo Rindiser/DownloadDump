@@ -1,0 +1,29 @@
+{
+  "name": "downloaddump",
+  "version": "1.0.0",
+  "description": "Download av GBIF dumpen til server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/app1.js -e js",
+    "tus": "nodemon src/TUS_App.js -e js",
+    "fe": "nodemon src/fetchApp.js -e js",
+    "unzip": "nodemon src/utils/unZip.js -e js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "abort-controller": "^3.0.0",
+    "adm-zip": "^0.4.14",
+    "chalk": "^3.0.0",
+    "express": "^4.17.1",
+    "express-fileupload": "^1.1.6",
+    "formidable": "^2.0.0-canary.20200226.1",
+    "mkdirp": "^1.0.3",
+    "node-fetch": "^2.6.0",
+    "tus-js-client": "^1.8.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2"
+  }
+}

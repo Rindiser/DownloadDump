@@ -1,0 +1,54 @@
+[
+    {
+        "name": "alger",
+        "file": "./src/data/algae_o.txt"
+    },
+    {
+        "name": "birds",
+        "file": "./src/data/birds_occurrence.txt"
+    },
+    {
+        "name": "dna_entomologi",
+        "file": "./src/data/DNA_entomology_occurrence.txt"
+    },
+    {
+        "name": "dna_fish_herptiles",
+        "file": "./src/data/DNA_fish_herptiles_occurrence.txt"
+    },
+    {
+        "name": "dna_fungi_lichens",
+        "file": "./src/data/DNA_fungi_lichens_occurrence.txt"
+    },
+    {
+        "name": "dna_other",
+        "file": "./src/data/DNA_other_occurrence.txt"
+    },
+    {
+        "name": "dna_karplanter",
+        "file": "./src/data/DNA_vascular_occurrence.txt"
+    },
+    {
+        "name": "entomologi",
+        "file": "./src/data/entomology_nhmo.txt"
+    },
+    {
+        "name": "sopp",
+        "file": "./src/data/fungus_o.txt"
+    },
+    {
+        "name": "lav",
+        "file": "./src/data/lichens_o.txt"
+    },
+    {
+        "name": "mammals",
+        "file": "./src/data/mammals_occurrence.txt"
+    },
+    {
+        "name": "moser",
+        "file": "./src/data/moss_o.txt"
+    },
+    {
+        "name": "karplanter",
+        "file": "./src/data/vascular_o.txt"
+    }
+]
