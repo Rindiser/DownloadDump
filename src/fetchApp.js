@@ -38,7 +38,7 @@ function rename (zipFile) {
 console.log(zipFile);
 
 let oldName = "./src/data/unzip/" + zipFile.zipFileName + ".txt"
-let newName = "./src/data/renamed/" + zipFile.name + "_occurences.txt"
+let newName = "./src/data/renamed/" + zipFile.name + "_occurrence.txt"
 fsRename(oldName,newName)
 
 let mediaOldName = ""
@@ -57,7 +57,7 @@ fsRename(mediaOldName,mediaNewName)
 // Hovedfunksjon
 // download the files and unzip
 async function download (someThing, callback) {
- for (i = 0, len = fileList.length; i < len; i++) {
+ for (i = 1, len = fileList.length; i < len; i++) {
     let fileName = './src/data/' + fileList[i].name + '.zip'
 
     const response = await fetch(fileList[i].url, { signal: controller.signal })

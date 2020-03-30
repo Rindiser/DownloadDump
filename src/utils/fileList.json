@@ -1,5 +1,12 @@
 [
 {
+    "filMetadata": {
+        "forklaring": "i kombinasjon med name objektet gir occurranceFile filnavn for occurrance fila" ,
+        "OccurranceFile": "_occurrence.txt",
+        "mediaFile": "_media.txt"  
+    }
+},
+{
     "source": "musit",
     "name": "alger",
     "zipFileName": "alge_o",
@@ -17,7 +24,7 @@
     "source": "musit",
     "name": "karplanter",
     "zipFileName": "vascular_o",
-    "mediaFile": "gh_media",
+    "mediaFile": "_media",
     "url": "http://www.unimus.no/nedlasting/datasett/DwC-A/vascular_o.zip"
 },
 {

@@ -1,0 +1,43 @@
+[
+    {
+        "collectionEvent" : {
+            "date" :{
+                "year0": 0,
+                "year1": 0,
+                "year2": 0,
+                "year3": 0,
+                "year4": 0
+            },
+            "year" : [],
+            "collector" : []
+        }
+    },
+    {
+        "geography" :{
+            "country" : [],
+            "county" : [],
+            "municipality": [],
+            "locality" : [],
+            "coordinates" : []
+        }
+    },
+    {
+        "recorded" : {
+            "modified" : [0,0,0,0,0],
+            "recordedBy" : []
+
+        }
+    },
+     {
+         "collectionSize" : ""
+     },
+     {
+         "taxon": {
+             "order": "",
+             "family": "",
+             "genus": "",
+             "species": ""
+         }
+     }
+
+]

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/app.js",
     "fe": "nodemon src/fetchApp.js -e js",
-
+    "st": "nodemon src/utils/produceStats.js -e js"
   },
   "author": "",
   "license": "ISC",
@@ -14,10 +14,12 @@
     "abort-controller": "^3.0.0",
     "adm-zip": "^0.4.14",
     "chalk": "^3.0.0",
+    "clone": "^2.1.2",
     "express": "^4.17.1",
     "express-fileupload": "^1.1.6",
     "formidable": "^2.0.0-canary.20200226.1",
     "mkdirp": "^1.0.3",
+    "moment": "^2.24.0",
     "node-fetch": "^2.6.0",
     "tus-js-client": "^1.8.0"
   },
