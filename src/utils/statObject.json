@@ -29,7 +29,8 @@
         }
     },
      {
-         "collectionSize" : ""
+         "collectionSize" : "",
+         "accumulativeSize" : ""
      },
      {
          "taxon": {
@@ -37,6 +38,11 @@
              "family": "",
              "genus": "",
              "species": ""
+         }
+     },
+     {
+         "media" : {
+            "stillImage" : ""
          }
      }
 
