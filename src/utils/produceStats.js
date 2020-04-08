@@ -3,7 +3,6 @@ const fs = require('fs')
 const fileList = require('./fileList')
 const statObject2 = require('./statObject')
 const chalk = require('chalk');
-const moment = require('moment');
 const clone = require('clone');
 
 // sett opp objekter og variable for å holde dataene som søkes opp. 
@@ -18,33 +17,23 @@ let totObject = {}
 totObject = clone(statObject2) // deep clone av tot object
 
 let totalcollectionSize = 0
-// variabler for å de 5 siste årene
-    let thisYear = moment().format('YYYY')
-    thisYear = parseInt(thisYear, 10); // gjør om thisYear til et tall
-    const lastYear = thisYear - 1
-    const twoYearsAgo = thisYear - 2
-    const threeYearsAgo = thisYear - 3
-    const fourYearsAgo = thisYear - 4
-
 
 // objekter for mellomlagring av data, 
-// vi bruker array av objekter da dette kan sortes senere
+// vi bruker array av objekter da dette kan sortes senere[{key:Norge, number:1233},{key:Sverige, number:4558}]
     let country = []
     let totcountry = ""
     let year = []
+    let totYear = ""
     let akkumulativYear = []  
-    let date = [
-        {year: thisYear,  antall: 0},
-        {year: lastYear,  antall: 0},
-        {year: twoYearsAgo,  antall: 0},
-        {year: threeYearsAgo,  antall: 0},
-        {year: fourYearsAgo,  antall: 0},
-    ]
+    let totAkkumulativYear = ""
+
     let collectionEvent = {
         date: {},
         collector: {}
     }
     let recordedBy = []
+    let totRecordedBy = ""
+
     let hasCoordinates = [
         {yes:0},
         {no:0}
@@ -54,11 +43,13 @@ let totalcollectionSize = 0
         {no:0}
     ]
     let hasImage = 0
-
+    let totHasImage = 0
     let taxon = {}
     let order = []
     let family = []
     let genus = []
+    let typeStatus = []
+    let totTypeStatus = ""
  
    let countryField = ""
 // Teller antall ganger en key er i fila, f.eks. hvor mange ganger er land = Norge, 
@@ -116,10 +107,11 @@ const transformObject = (obj, name) => {
 // summere opp samlingsstørrelsen på tvers av samlinger på år
 // input year, variabelen der samlingsstørrelsen for en samling er lagret
 //output akkumulativYear en array av objekter med samlingstørrelse per år [{year:1850, number:1233}, {year:181, number: 1255}]
+let element = 0
 const calcAkkumulativtYear = (year) => {
     year.sort((a, b) => (a.year > b.year) ? 1 : (a.year === b.year) ? ((a.name > b.name) ? 1 : -1) : -1 )
     // akkumulativ samlingsstørrelse
-    let element = 0
+    
     for (let i = 0; i < year.length; i++) {
         if (isNaN(year[i].number) ) {
             console.log('nei');
@@ -134,18 +126,39 @@ const calcAkkumulativtYear = (year) => {
 }
 
 // add objects so we get totalnumbers for collection
-//input [{key: value},{key:value},{key:value}]
-const sumData = (arr) => {
+//input [{key: value},{key:value},{key:value}], sortby sier om resultatet skal sortres etter key eller value
+const sumData = (arr, currentArr, sortby = 'value') => {
+    // Legge sammen antall objekter per land
+    if (!arr){
+        arr = clone(currentArr)
+    } else {
+        arr = arr.concat(currentArr)
+        arr = clone(arr)
+    }
+
     const res = Object.values(arr.reduce((acc, {number, ...r}) => {
         const key = Object.entries(r).join('-');
         acc[key] = (acc[key]  || {...r, number: 0});
         return (acc[key].number += number, acc);
     }, {}));
-    res.sort((a, b) => (a.number < b.number) ? 1 : (a.number === b.number) ? ((a.key > b.key) ? 1 : -1) : -1 )
+    if(sortby === 'value'){
+        res.sort((a, b) => (a.number < b.number) ? 1 : (a.number === b.number) ? ((a.key > b.key) ? 1 : -1) : -1 )
+    } else {
+        res.sort((a, b) => (a.key < b.key) ? 1 : (a.key === b.key) ? ((a.number > b.number) ? 1 : -1) : -1 )  
+    }
     return res
 }
 
-// Lagre samlingsobjectet tl fil
+// sum av poster med koordinater
+// input 2 av array av typen [{yes:0},{no:0}], et med totalen og et med enkel samlingen (denne)
+// output arrray [{yes:877},{no:9970}]
+const sumYesNo = (total,denne) => {
+    total[0].yes = total[0].yes + denne[0].yes
+    total[1].no = total[1].no + denne[1].no
+
+    return total   
+}
+// Lagre samlingsobjectet til fil
 //input et object
 // resultat_ en fil med navn statData.json på JSON format
  async function saveObjectToFile(samlingsObj) {
@@ -178,6 +191,7 @@ async function processLineByLine(fileWithPath, currentColl) {
     // går igennom fila for å finner ut hvilken kolonne de forskejllige temaene står i 
     readInterface.on('line', (line) => {    
         const  arrayLine = line.split("\t"); //lag en arry splittet på tab
+         
         if (linesCount === 0) {
             countryField = arrayLine.indexOf('country')
             recordedByField = arrayLine.indexOf('recordedBy')
@@ -185,23 +199,13 @@ async function processLineByLine(fileWithPath, currentColl) {
             familyField  = arrayLine.indexOf('family')
             genusField  = arrayLine.indexOf('genus')
             yearField = arrayLine.indexOf('eventDate')
-            coordinatesLatField = arrayLine.indexOf('decimalLatitude')            
+            coordinatesLatField = arrayLine.indexOf('decimalLatitude')  
+            typeStatusField = arrayLine.indexOf('typeStatus')                      
         }
        if (linesCount !== 0) { // Hopp over tittellinja 
-           if (arrayLine[yearField].includes(thisYear)) {
-               date[0].antall++
-           } else if (arrayLine[yearField].includes(lastYear)) {
-               date[1].antall++
-           }  else if (arrayLine[yearField].includes(twoYearsAgo)) {
-               date[2].antall++
-           }  else if (arrayLine[yearField].includes(threeYearsAgo)) {
-               date[3].antall++
-           }  else if (arrayLine[yearField].includes(fourYearsAgo)) {
-               date[4].antall++
-           } 
-
+ 
            //Year hent ut år fra en dato
-           // hvis datoen er på dette formate 1899-07-15
+           // datoen må være på dette formatet YYYY-MM-DD f.eks. 1899-07-15
            let modifiedDate
            if (arrayLine[yearField].includes('-')) {
                 modifiedDate = arrayLine[yearField].substring(0,arrayLine[yearField].indexOf('-'))
@@ -209,7 +213,7 @@ async function processLineByLine(fileWithPath, currentColl) {
             }
             //land
             country = countOccurrences(country,arrayLine[countryField])          
-            //innsamler
+            //innsamler, her er noen ganger flere innsamlere klumpet sammen, disse må skilles frahverandre
             recordedBy = countOccurrences(recordedBy,arrayLine[recordedByField])       
             //order
             order = countOccurrences(order, arrayLine[orderField])
@@ -217,69 +221,76 @@ async function processLineByLine(fileWithPath, currentColl) {
             family = countOccurrences(family,arrayLine[familyField])
             // genus
             genus = countOccurrences(genus, arrayLine[genusField])
+            // typeStatus
+            // Side det er så få poster som er typer bruker vi en if statment til å sjekke om de typer før vi legger de sammen
+            // hvis dump fila ikke inneholder typeStatusFelt, ka vi slutte med en gang
+            if (arrayLine[typeStatusField] != null){
+            // hvis typestatusfeltet er tomt e.g. 'sting' kortere enn 2 bokstaver så avslutter vi
+             if (arrayLine[typeStatusField].length > 2){
+            typeStatus = countOccurrences(typeStatus, arrayLine[typeStatusField])
+            }
+            }
+            
+  
             //has coordinates
             hasCoordinates = occurrencesTrueOrFalse(hasCoordinates, arrayLine[coordinatesLatField])
        }     
        linesCount++; // on each linebreak, add +1 to 'linesCount'    
 
     }).on('close', () => {
-        // console.log('has coordinates ');
-        // console.log(hasCoordinates);
-            country = transformObject(country, 'country')
-            if (!totcountry){
-                totcountry = clone(country)
-            } else {
-            totcountry = totcountry.concat(country)
-            totcountry = clone(totcountry)
-            totcountry = sumData(totcountry)
-            }
-            console.log('her er totcountry added together');
-            console.log(totcountry);
 
+        country = transformObject(country, 'country')
         year = transformObject(year, 'year')
-        // regn ut samlingsstørrelse på år for alle samlinger
-        calcAkkumulativtYear(year)
+        // regn ut samlingsstørrelse på år for currentCollection
+        akkumulativYear = calcAkkumulativtYear(year)
         recordedBy = transformObject(recordedBy, 'recordedBy')
         order = transformObject(order, 'order')
         family = transformObject(family, 'family')
         genus = transformObject(genus, 'genus')
+        typeStatus = transformObject(typeStatus, 'typeStatus')
+        // sett sammen taxon objektet
         taxon.order = order
         taxon.family = family
         taxon.genus = genus
-        console.log(chalk.yellow(currentColl.name));
-        console.log('databasestørrelse ' + linesCount);
+
  
         // lage total object
-        totalcollectionSize = totalcollectionSize + linesCount
-
-
-        // const sumCoord = () => {
-        //     totalhasCoordinates[0].yes = totalhasCoordinates[0].yes + hasCoordinates[0].yes
-        //     totalhasCoordinates[1].no = totalhasCoordinates[1].no + hasCoordinates[1].no
-        //     console.log(totalhasCoordinates);   
-        // } 
-        // sumCoord()
-            
-        statObject[0].collectionEvent.date = date
+            totalcollectionSize = totalcollectionSize + linesCount
+            // regn ut samlingsstørrelse på for alle samlingene
+            totAkkumulativYear = sumData(totAkkumulativYear, akkumulativYear, 'key')
+            totcountry = sumData(totcountry, country)
+            totYear = sumData(totYear, year, 'key')
+            totRecordedBy = sumData(totRecordedBy, recordedBy)
+            totTypeStatus = sumData(totTypeStatus, typeStatus)
+            // summer opp antallet poster med koordinater og uten koordinater
+            hasCoordinates = clone(hasCoordinates)
+            totalhasCoordinates = sumYesNo(totalhasCoordinates,hasCoordinates)
+ 
+        // lagre tall for enkelt samlinger
         statObject[0].collectionEvent.year = year
         statObject[0].collectionEvent.collector = recordedBy
         statObject[1].geography.country = country
+        statObject[1].geography.coordinates = hasCoordinates
         statObject[3].collectionSize = linesCount
-        statObject[3].accumulativeSize =akkumulativYear
+        statObject[3].accumulativeSize = akkumulativYear
         statObject[4].taxon = taxon
-                    
-        totObject[0].collectionEvent.date = date
-        totObject[0].collectionEvent.year = year
-        totObject[0].collectionEvent.collector = recordedBy
-        totObject[1].geography.country = country
-        totObject[3].collectionSize = linesCount
-        totObject[3].accumulativeSize =akkumulativYear
-        totObject[4].taxon = taxon
+        statObject[4].typeStatus = typeStatus
 
+        // lagre tall for sum av samlinger          
+        totObject[0].collectionEvent.year = totYear
+        totObject[0].collectionEvent.collector = totRecordedBy
+        totObject[1].geography.country = totcountry
+        totObject[1].geography.coordinates = totalhasCoordinates
+        totObject[3].collectionSize = totalcollectionSize
+        totObject[3].accumulativeSize =totAkkumulativYear
+        totObject[4].typeStatus = totTypeStatus
+        // hekte på objektene(statObject) for hver samling til et felles objekt(samlingsObj)
         samlingsObj[currentColl.name] = statObject
         samlingsObj['total'] = totObject
         samlingsObj = JSON.parse(JSON.stringify(samlingsObj))
         samlingsObj = clone(samlingsObj) // deep clone
+
+        // tømme objektene før neste runde
         country.length = 0
         recordedBy.length = 0
         year.length = 0
@@ -288,8 +299,10 @@ async function processLineByLine(fileWithPath, currentColl) {
         order.length = 0
         family.length = 0
         genus.length = 0
-
+        typeStatus.length = 0
         akkumulativYear.length = 0
+        hasCoordinates[0].yes = 0
+        hasCoordinates[1].no = 0
 
         statObject = clone(statObject2) // lager et "nyt" template statObject
 
@@ -302,7 +315,7 @@ async function processLineByLine(fileWithPath, currentColl) {
 });
 }
 
-// funskjone for å ta ut data fra filene
+// funksjon for å ta ut data fra filene
 // input: fileWithPath = filnavne med path som er en dump av databasen i Darwin Core format
 // currentColl som er filnavn ut extention, eg. Vasular_o
 async function processMediaLineByLine(mediaFileWithPath, currentColl, samlingsObj) {   
@@ -323,7 +336,6 @@ async function processMediaLineByLine(mediaFileWithPath, currentColl, samlingsOb
             if (linesCount !== 0) { // Etter tittellinja 
                 // der det er flere bilder av samme objekt skal vi bare telle en de
                 let imageLastLine = ""
-                
                 if(imageLastLine !== arrayLine[stillImageField]){
                     hasImage ++ 
                     imageLastLine = arrayLine[stillImageField]
@@ -332,11 +344,17 @@ async function processMediaLineByLine(mediaFileWithPath, currentColl, samlingsOb
         linesCount++; // on each linebreak, add +1 to 'linesCount'    
 
         }).on('close', () => {
-
+            console.log(chalk.blue('her kommer bildene'));
+            console.log(hasImage);
+            // legge sammen bildene per del samling en totalsum
+            totHasImage = totHasImage + hasImage
             samlingsObj[currentColl.name][5].media.stillImage = hasImage
+            samlingsObj['total'][5].media.stillImage = totHasImage
             samlingsObj = clone(samlingsObj) // deep clone
-            resolve(samlingsObj)
             hasImage = 0
+
+            resolve(samlingsObj)
+            
         }).on('error', err => {
             reject(err);
         })
@@ -350,7 +368,7 @@ const main = async function (file)  {
     // https://codepen.io/rustydev/pen/GBKGKG?editors=0010
     try {
     for (i = 1, len = file.length; i < len; i++) {
-        // for (i = 1, len = 3; i < len; i++) {
+        // for (i = 1, len = 4; i < len; i++) {
                 let currentColl = file[i]
                 
                 fileWithPath = "./src/data/renamed/" + file[i].name + "_occurrence.txt" 
@@ -364,7 +382,7 @@ const main = async function (file)  {
                     await saveObjectToFile(imageResults)
         }
         if (i= len) {
-        console.log('vi er ferdige ' + len);
+        console.log(chalk.blue('vi er ferdige med ' + len + ' filer'));
         }
         
     } catch (e) {
@@ -373,7 +391,6 @@ const main = async function (file)  {
 }
 
 main(fileList)
-
 
 // exportere funksjonen ut
 module.exports = { 

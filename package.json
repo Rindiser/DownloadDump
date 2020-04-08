@@ -19,7 +19,6 @@
     "express-fileupload": "^1.1.6",
     "formidable": "^2.0.0-canary.20200226.1",
     "mkdirp": "^1.0.3",
-    "moment": "^2.24.0",
     "node-fetch": "^2.6.0",
     "tus-js-client": "^1.8.0"
   },
