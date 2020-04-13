@@ -50,8 +50,8 @@ let totalcollectionSize = 0
     let genus = []
     let typeStatus = []
     let totTypeStatus = ""
- 
-   let countryField = ""
+    let countryField = ""
+
 // Teller antall ganger en key er i fila, f.eks. hvor mange ganger er land = Norge, 
 // svaret er {key:value}, {Norge: 125}
 // obj er et tomt array for å lagre dataene,
@@ -66,6 +66,7 @@ const countOccurrences = (obj, lineField) => {
     }
     return obj
 }
+
 // teller omen post har en egenskap eller ikke
 // f.eks. har posten koordinater? 
 //returnerer et en array på formmer [{true:125}, {false:455}]
@@ -79,17 +80,12 @@ const occurrencesTrueOrFalse = (obj, lineField) => {
     }
     return obj
 }
+
 // gjør om objektene objektet til et array av objekter på formen {key:value}, {Norge: 125} 
 // til [{country: 'Norway, antall: 125}]
 // obj = objektet som skal transformeres på formen {{key:value}, {key:value}}
 // name = keynavnet til value, skal være en string
 const transformObject = (obj, name) => {
-    // if (name === 'country') {
-    //     console.log(name);
-        
-    // console.log(obj);
-    // }
-
     obj = Object.entries(obj)
     let hold = []      
     for (let i = 0; i < obj.length; i++) {     
@@ -104,23 +100,31 @@ const transformObject = (obj, name) => {
     hold.sort((a, b) => (a.number < b.number) ? 1 : (a.number === b.number) ? ((a.name > b.name) ? 1 : -1) : -1 )
     return hold
 }
+
 // summere opp samlingsstørrelsen på tvers av samlinger på år
 // input year, variabelen der samlingsstørrelsen for en samling er lagret
-//output akkumulativYear en array av objekter med samlingstørrelse per år [{year:1850, number:1233}, {year:181, number: 1255}]
-let element = 0
+//output akkumulativYear en array av objekter med samlingstørrelse per år [{year:1850, number:1233}, {year:1851, number: 1255}]
 const calcAkkumulativtYear = (year) => {
-    year.sort((a, b) => (a.year > b.year) ? 1 : (a.year === b.year) ? ((a.name > b.name) ? 1 : -1) : -1 )
+    year.sort((a, b) => (b.year < a.year) ? 1 : (a.year === b.year) ? ((a.number - b.number) ? 1 : -1) : -1 )
     // akkumulativ samlingsstørrelse
-    
+    let element = 0
+    let lengthTest = "" // for å test om årstallet har 4 nummer, eller blir det problemer
     for (let i = 0; i < year.length; i++) {
+        lengthTest = ' ' + year[i].year
         if (isNaN(year[i].number) ) {
             console.log('nei');
         }
+        else if (lengthTest.length <= 4) {
+            console.log(year[i].year);
+        } else if (year[i].year > 2020 || year[i].year < 1500) {
+            console.log(year[i].year);
+        } else {
         element += year[i].number;
         akkumulativYear[i] = {
             year: year[i].year,
             number: element
-            } 
+            }    
+        }
     }
     return akkumulativYear
 }
@@ -140,11 +144,12 @@ const sumData = (arr, currentArr, sortby = 'value') => {
         const key = Object.entries(r).join('-');
         acc[key] = (acc[key]  || {...r, number: 0});
         return (acc[key].number += number, acc);
-    }, {}));
+    }, {}));  
+    
     if(sortby === 'value'){
-        res.sort((a, b) => (a.number < b.number) ? 1 : (a.number === b.number) ? ((a.key > b.key) ? 1 : -1) : -1 )
+        res.sort((a, b) => (b.number - a.number) ? 1 : (a.number === b.number) ? ((a.key > b.key) ? 1 : -1) : -1 )
     } else {
-        res.sort((a, b) => (a.key < b.key) ? 1 : (a.key === b.key) ? ((a.number > b.number) ? 1 : -1) : -1 )  
+        res.sort((a, b) => (b.key - a.key) ? 1 : (a.key === b.key) ? ((a.number - b.number) ? 1 : -1) : -1 )  
     }
     return res
 }
@@ -158,8 +163,9 @@ const sumYesNo = (total,denne) => {
 
     return total   
 }
+
 // Lagre samlingsobjectet til fil
-//input et object
+// input et object
 // resultat_ en fil med navn statData.json på JSON format
  async function saveObjectToFile(samlingsObj) {
     console.log(chalk.red('vi lagrer....'));
@@ -203,9 +209,9 @@ async function processLineByLine(fileWithPath, currentColl) {
             typeStatusField = arrayLine.indexOf('typeStatus')                      
         }
        if (linesCount !== 0) { // Hopp over tittellinja 
- 
            //Year hent ut år fra en dato
            // datoen må være på dette formatet YYYY-MM-DD f.eks. 1899-07-15
+           // Year = tilvekst per år
            let modifiedDate
            if (arrayLine[yearField].includes('-')) {
                 modifiedDate = arrayLine[yearField].substring(0,arrayLine[yearField].indexOf('-'))
@@ -226,19 +232,15 @@ async function processLineByLine(fileWithPath, currentColl) {
             // hvis dump fila ikke inneholder typeStatusFelt, ka vi slutte med en gang
             if (arrayLine[typeStatusField] != null){
             // hvis typestatusfeltet er tomt e.g. 'sting' kortere enn 2 bokstaver så avslutter vi
-             if (arrayLine[typeStatusField].length > 2){
-            typeStatus = countOccurrences(typeStatus, arrayLine[typeStatusField])
+                if (arrayLine[typeStatusField].length > 2){
+                typeStatus = countOccurrences(typeStatus, arrayLine[typeStatusField])
+                }
             }
-            }
-            
-  
             //has coordinates
             hasCoordinates = occurrencesTrueOrFalse(hasCoordinates, arrayLine[coordinatesLatField])
        }     
        linesCount++; // on each linebreak, add +1 to 'linesCount'    
-
     }).on('close', () => {
-
         country = transformObject(country, 'country')
         year = transformObject(year, 'year')
         // regn ut samlingsstørrelse på år for currentCollection
@@ -253,18 +255,17 @@ async function processLineByLine(fileWithPath, currentColl) {
         taxon.family = family
         taxon.genus = genus
 
- 
         // lage total object
-            totalcollectionSize = totalcollectionSize + linesCount
-            // regn ut samlingsstørrelse på for alle samlingene
-            totAkkumulativYear = sumData(totAkkumulativYear, akkumulativYear, 'key')
-            totcountry = sumData(totcountry, country)
-            totYear = sumData(totYear, year, 'key')
-            totRecordedBy = sumData(totRecordedBy, recordedBy)
-            totTypeStatus = sumData(totTypeStatus, typeStatus)
-            // summer opp antallet poster med koordinater og uten koordinater
-            hasCoordinates = clone(hasCoordinates)
-            totalhasCoordinates = sumYesNo(totalhasCoordinates,hasCoordinates)
+        totalcollectionSize = totalcollectionSize + linesCount
+        // regn ut samlingsstørrelse på for alle samlingene
+        totAkkumulativYear = sumData(totAkkumulativYear, akkumulativYear, 'key')
+        totcountry = sumData(totcountry, country)
+        totYear = sumData(totYear, year, 'key')
+        totRecordedBy = sumData(totRecordedBy, recordedBy)
+        totTypeStatus = sumData(totTypeStatus, typeStatus)
+        // summer opp antallet poster med koordinater og uten koordinater
+        hasCoordinates = clone(hasCoordinates)
+        totalhasCoordinates = sumYesNo(totalhasCoordinates,hasCoordinates)
  
         // lagre tall for enkelt samlinger
         statObject[0].collectionEvent.year = year
@@ -284,6 +285,7 @@ async function processLineByLine(fileWithPath, currentColl) {
         totObject[3].collectionSize = totalcollectionSize
         totObject[3].accumulativeSize =totAkkumulativYear
         totObject[4].typeStatus = totTypeStatus
+
         // hekte på objektene(statObject) for hver samling til et felles objekt(samlingsObj)
         samlingsObj[currentColl.name] = statObject
         samlingsObj['total'] = totObject
@@ -362,13 +364,18 @@ async function processMediaLineByLine(mediaFileWithPath, currentColl, samlingsOb
 }
 
 
+// const createTotObjekt = () => {
+//     accYear = conCatResults(samlingsObj, '0','collectionEvent','year') // Slå sammen samlinggsstørrelse akkumulativ per år
+// }
+
+
 //hovedtall
 const main = async function (file)  {
     // her skal den lese igjennom hver fila og returnere poster som er registrert siste 5 år og poster som samle inn siste 5 år
     // https://codepen.io/rustydev/pen/GBKGKG?editors=0010
     try {
     for (i = 1, len = file.length; i < len; i++) {
-        // for (i = 1, len = 4; i < len; i++) {
+        // for (i = 1, len = 3; i < len; i++) {
                 let currentColl = file[i]
                 
                 fileWithPath = "./src/data/renamed/" + file[i].name + "_occurrence.txt" 
@@ -383,6 +390,7 @@ const main = async function (file)  {
         }
         if (i= len) {
         console.log(chalk.blue('vi er ferdige med ' + len + ' filer'));
+        // createTotObjekt(samlingsObj)
         }
         
     } catch (e) {
@@ -391,6 +399,7 @@ const main = async function (file)  {
 }
 
 main(fileList)
+
 
 // exportere funksjonen ut
 module.exports = { 
