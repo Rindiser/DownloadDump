@@ -187,17 +187,17 @@ const sumYesNo = (total,denne) => {
 // input: fileWithPath = filnavne med path som er en dump av databasen i Darwin Core format
 // currentColl som er filnavn ut extention, eg. Vasular_o
 async function processLineByLine(fileWithPath, currentColl) {   
-    return new Promise((resolve, reject) => {
-   const readInterface = readline.createInterface({
+   return new Promise((resolve, reject) => {
+   const readInterface = readline.createInterface({      
        input: fs.createReadStream(fileWithPath),
        console: false
    })
+    
     // for å lagre databasestørrelsen; teller antall linjer i fila
     let linesCount = 0
     // går igennom fila for å finner ut hvilken kolonne de forskejllige temaene står i 
     readInterface.on('line', (line) => {    
-        const  arrayLine = line.split("\t"); //lag en arry splittet på tab
-         
+        const  arrayLine = line.split("\t"); //lag en arry splittet på tab         
         if (linesCount === 0) {
             countryField = arrayLine.indexOf('country')
             recordedByField = arrayLine.indexOf('recordedBy')
@@ -364,11 +364,6 @@ async function processMediaLineByLine(mediaFileWithPath, currentColl, samlingsOb
 }
 
 
-// const createTotObjekt = () => {
-//     accYear = conCatResults(samlingsObj, '0','collectionEvent','year') // Slå sammen samlinggsstørrelse akkumulativ per år
-// }
-
-
 //hovedtall
 const main = async function (file)  {
     // her skal den lese igjennom hver fila og returnere poster som er registrert siste 5 år og poster som samle inn siste 5 år
@@ -383,14 +378,22 @@ const main = async function (file)  {
                 // mediaFileWithPath = "./src/data/renamed/karplanter_media.txt" 
                 console.log(fileWithPath);
 
-                const samlingsObj = await processLineByLine(fileWithPath, currentColl);
-                    await saveObjectToFile(samlingsObj)
+                // test om fila fins før vi prøver å lage stat
+                if (fs.existsSync(fileWithPath)) {
+                    const samlingsObj = await processLineByLine(fileWithPath, currentColl);
+                            await saveObjectToFile(samlingsObj)
+                } else {
+                    console.log(chalk.red('Denne fila eksisterer ikke: ' + fileWithPath)); 
+                }
+                if (fs.existsSync(mediaFileWithPath)) {
                 const imageResults = await processMediaLineByLine(mediaFileWithPath, currentColl, samlingsObj);   
                     await saveObjectToFile(imageResults)
+                } else {
+                    console.log(chalk.red('Denne fila eksisterer ikke: ' + mediaFileWithPath));
+                }
         }
         if (i= len) {
         console.log(chalk.blue('vi er ferdige med ' + len + ' filer'));
-        // createTotObjekt(samlingsObj)
         }
         
     } catch (e) {
