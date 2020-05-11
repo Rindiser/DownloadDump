@@ -16,6 +16,8 @@
     "adm-zip": "^0.4.14",
     "chalk": "^3.0.0",
     "clone": "^2.1.2",
+    "convert-array-to-csv": "^1.0.12",
+    "csv-writer": "^1.6.0",
     "mkdirp": "^1.0.3",
     "node-fetch": "^2.6.0",
     "papaparse": "^5.2.0"

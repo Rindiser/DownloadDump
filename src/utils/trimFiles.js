@@ -3,6 +3,8 @@ const chalk = require('chalk');
 const fileList = require('./fileList')
 const Papa = require('papaparse')
 const clone = require('clone');
+const { convertArrayToCSV } = require('convert-array-to-csv');
+const converter = require('convert-array-to-csv');
 
 
 // Adding imagae File name to the end of each array, as an object
@@ -123,27 +125,29 @@ async function deleteColumns(fileWithPath, mediaFileName, source, name, outfileN
         //https://stackoverflow.com/questions/33211799/filter-array-based-on-an-array-of-index
         slimArrayy.push(indexArray.map((item) => parseFile.data[i][item]))   
     }
-    // Add image File name frommedia file
-    if(source === 'musit')
-    {
+    // Add image File name from media file
     slimArrayy = await addImageName(slimArrayy, mediaFileName, source)
-    }
-
-    let csvFromArrayOfArrays = Papa.unparse(slimArrayy, {delimiter: "\t"})
-    slimArrayy.length = 0 // tøm array for å reducere minnebruk
     indexArray.length = 0
-    fs.writeFileSync( outfileName,csvFromArrayOfArrays)
-    csvFromArrayOfArrays = ""
+    const header = headerFields;
+    let csvFromArrayOfArrays = convertArrayToCSV(slimArrayy, {
+        header,
+        separator: '\t'
+      });
+    slimArrayy.length = 0 // tøm array for å reducere minnebruk
+    csvFromArrayOfArrays = csvFromArrayOfArrays.replace(/"/g, "");
+
+
+    fs.writeFileSync( outfileName,csvFromArrayOfArrays, {encoding: 'utf8'})
 }
 
 
 async function fixFile  () {
     for (i = 1, len = fileList.length; i < len; i++) {
-        // for (i = 1, len = fileList.length; i < 2; i++)  {
+        // for (i = 1, len = fileList.length; i < 3; i++)  {
         let fileWithPath = "./src/data/renamed/" + fileList[i].name + '_occurrence.txt'
         let mediaFileName = "./src/data/renamed/" + fileList[i].name + '_media.txt'
         let source = fileList[i].source
-        let fileName = "./src/data/renamed/" + fileList[i].name + '_occurrence_reduced.txt'
+        let fileName = "./src/data/renamed/" + fileList[i].name + '_occurrence.txt'
         await deleteColumns(fileWithPath, mediaFileName, source, fileList[i].name, fileName)
     }
 }
