@@ -1,5 +1,5 @@
 # DownloadDump
-This program downloads and prepairs the data files for the [NHM-portal project](https://github.com/gunnhilm/NHM-portaler-2).
+This program downloads and prepares the data files for the [NHM-portal project](https://github.com/gunnhilm/NHM-portaler-2).
 
 ## Instalation
 
