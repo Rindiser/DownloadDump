@@ -22,7 +22,7 @@
     "convert-array-to-csv": "^1.0.12",
     "csv-writer": "^1.6.0",
     "mkdirp": "^1.0.3",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "papaparse": "^5.2.0"
   },
   "devDependencies": {
