@@ -10,6 +10,8 @@ const chalk = require('chalk');
 const streamPipeline = util.promisify(require('stream').pipeline)
 const mkdirp = require('mkdirp')
 
+
+console.log(chalk.red(fileList.length));
 console.log('Starting download....');
 // makingsure that renamed folder exist, if not create it
 const made = mkdirp.sync('./src/data//renamed')
@@ -21,12 +23,12 @@ const timeout = setTimeout(
   180000, // timeout etter 3 minutt
 );
 
-const fsRename = (oldName,newName) => {
+const fsRenameFiles = (oldName,newName) => {
   console.log(oldName);
   console.log(newName);
   fs.rename(oldName, newName, (err) => {
     if (err){
-      console.log(chalk.red('Rename error' + err));
+      console.log(chalk.red('Rename error: ' + err));
     } else {
     console.log(chalk.green('Rename complete!'));
     } })
@@ -34,30 +36,37 @@ const fsRename = (oldName,newName) => {
 }
 
 // move and rename the files
-function rename (zipFile) {
-console.log(zipFile);
+function makeFileNames (zipFile) {
+  console.log(zipFile);
+  const oldPath = "./src/data/unzip/"
+  const newPath = "./src/data/renamed/" 
 
-let oldName = "./src/data/unzip/" + zipFile.zipFileName + ".txt"
-let newName = "./src/data/renamed/" + zipFile.name + "_occurrence.txt"
-fsRename(oldName,newName)
+  let oldName = oldPath + zipFile.zipFileName + ".txt"
+  let newName = newPath + zipFile.name + "_occurrence.txt"
+  fsRenameFiles(oldName,newName)
 
-let mediaOldName = ""
-let mediaNewName = ""
+  let mediaOldName = ""
+  let mediaNewName = ""
 
-if (zipFile.source === "musit") {   
-  mediaOldName = "./src/data/unzip/" + zipFile.zipFileName + zipFile.mediaFile + ".txt"
-  mediaNewName = "./src/data/renamed/" + zipFile.name + "_media.txt"
-} else if (zipFile.source === "corema") {
-    mediaOldName = "./src/data/unzip/"  + zipFile.mediaFile + ".txt"
-    mediaNewName = "./src/data/renamed/" + zipFile.name + "_media.txt"
-} 
-fsRename(mediaOldName,mediaNewName)
+  if (zipFile.source === "musit") {   
+    mediaOldName = oldPath + zipFile.zipFileName + zipFile.mediaFile + ".txt"
+    mediaNewName = newPath + zipFile.name + "_media.txt"
+    fsRenameFiles(mediaOldName,mediaNewName)
+  } else if (zipFile.source === "corema") {
+    for (ii = 1, lens = fileList[0].coremaFiles.length; ii < lens; ii++) {
+      miscOldName = oldPath + fileList[0].coremaFiles[ii] + ".txt"
+      miscNewName = newPath + zipFile.name + "_" + fileList[0].coremaFiles[ii] + ".txt"
+      fsRenameFiles(miscOldName,miscNewName)      
+    }
+  } 
+ 
 }
 
 // Hovedfunksjon
 // download the files and unzip
 async function download (someThing, callback) {
  for (i = 1, len = fileList.length; i < len; i++) {
+//  for (i = 1, len = fileList.length; i < 4; i++) {
     let fileName = './src/data/' + fileList[i].name + '.zip'
 
     const response = await fetch(fileList[i].url, { signal: controller.signal })
@@ -69,18 +78,15 @@ async function download (someThing, callback) {
       const zip = new AdmZip(fileName);
       // extracts everything, overwrite = true
      zip.extractAllTo("./src/data/unzip/", true)
-     rename(fileList[i] )
+     makeFileNames (fileList[i] )
     } catch (error) {
       console.log(chalk.red(error));
     }
-
-} 
-if (i = fileList.length) {
-  
-  console.log(chalk.green('done!'))
-  process.exit() // hvis alle filer er downloaded og unzipped så slå av programmet
-} 
+  } 
+  if (i = fileList.length) {
+    console.log(chalk.green('done!'))
+    process.exit() // hvis alle filer er downloaded og unzipped så slå av programmet
+  } 
 }
 
 download ()
-

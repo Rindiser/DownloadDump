@@ -4,97 +4,105 @@
         "forklaring": "i kombinasjon med name objektet gir occurranceFile filnavn for occurrance fila" ,
         "OccurranceFile": "_occurrence.txt",
         "mediaFile": "_media.txt"  
-    }
+    },
+    "coremaFiles" : ["occurrence", "amplification","materialsample","multimedia","permit","preparation","preservation","resourcerelationship"]
 },
 {
     "source": "musit",
     "name": "alger",
     "zipFileName": "alge_o",
     "mediaFile": "_media",
-    "url": "http://www.unimus.no/nedlasting/datasett/DwC-A/alge_o.zip"
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/alge_o.zip"
 },
 {
     "source": "corema",
     "name": "dna_other",
     "zipFileName": "occurrence",
-    "mediaFile": "multimedia",
-    "url": "https://ipt.gbif.no/archive.do?r=o_dna_other"
+    "mediaFile": "_multimedia",
+    "url": "https://ipt.gbif.no/archive.do?r=o_dna_other",
+    "akronym": "NHMO-DOT"
 },
 {
     "source": "musit",
     "name": "karplanter",
     "zipFileName": "vascular_o",
     "mediaFile": "_media",
-    "url": "http://www.unimus.no/nedlasting/datasett/DwC-A/vascular_o.zip"
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/vascular_o.zip"
 },
 {
     "source": "musit",
     "name": "entomologi",
     "zipFileName": "entomology_nhmo",
     "mediaFile": "_media",
-    "url": "http://www.unimus.no/nedlasting/datasett/DwC-A/entomology_nhmo.zip"
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/entomology_nhmo.zip"
 },
 {
     "source": "musit",
     "name": "lav",
     "zipFileName": "lichens_o",
     "mediaFile": "_media",
-    "url": "http://www.unimus.no/nedlasting/datasett/DwC-A/lichens_o.zip"
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/lichens_o.zip"
 },
 {
     "source": "musit",
     "name": "moser",
     "zipFileName": "moss_o",
     "mediaFile": "_media",
-    "url": "http://www.unimus.no/nedlasting/datasett/DwC-A/moss_o.zip"
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/moss_o.zip"
 },
 {
     "source": "musit",
     "name": "sopp",
     "zipFileName": "fungus_o",
     "mediaFile": "_media",
-    "url": "http://www.unimus.no/nedlasting/datasett/DwC-A/fungus_o.zip"
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/fungus_o.zip"
 },
 {
     "source": "corema",
     "name": "mammals",
     "zipFileName": "occurrence",
-    "mediaFile": "multimedia",
-    "url": "https://ipt.gbif.no/archive.do?r=o_mammals"
+    "mediaFile": "_multimedia",
+    "url": "https://ipt.gbif.no/archive.do?r=o_mammals",
+    "akronym": "NHMO-BMA"
 },
 {
     "source": "corema",
     "name": "birds",
     "zipFileName": "occurrence",
-    "mediaFile": "multimedia",
-    "url": "https://ipt.gbif.no/archive.do?r=birds"
+    "mediaFile": "_multimedia",
+    "url": "https://ipt.gbif.no/archive.do?r=birds",
+    "akronym": "NHMO-BI"
 },
 {
     "source": "corema",
     "name": "dna_entomologi",
     "zipFileName": "occurrence",
-    "mediaFile": "multimedia",
-    "url": "https://ipt.gbif.no/archive.do?r=o_dna_arthropods"
+    "mediaFile": "_multimedia",
+    "url": "https://ipt.gbif.no/archive.do?r=o_dna_arthropods",
+    "akronym": "NHMO-DAR"
 },
 {
     "source": "corema",
     "name": "dna_fish_herptiles",
     "zipFileName": "occurrence",
-    "mediaFile": "multimedia",
-    "url": "https://ipt.gbif.no/archive.do?r=o_dna_fish_herptiles"
+    "mediaFile": "_multimedia",
+    "url": "https://ipt.gbif.no/archive.do?r=o_dna_fish_herptiles",
+    "akronym": "NHMO-DFH"
 },
 {
     "source": "corema",
     "name": "dna_fungi_lichens",
     "zipFileName": "occurrence",
-    "mediaFile": "multimedia",
-    "url": "https://ipt.gbif.no/archive.do?r=o_dna_fungi_lichens"
+    "mediaFile": "_multimedia",
+    "url": "https://ipt.gbif.no/archive.do?r=o_dna_fungi_lichens",
+    "akronym": "O-DFL"
 },
 {
     "source": "corema",
     "name": "dna_karplanter",
     "zipFileName": "occurrence",
-    "mediaFile": "multimedia",
-    "url": "https://ipt.gbif.no/archive.do?r=o_dna_plants"
+    "mediaFile": "_multimedia",
+    "url": "https://ipt.gbif.no/archive.do?r=o_dna_plants",
+    "akronym": "O-DP"
 }
 ]
