@@ -1,0 +1,45 @@
+[
+{
+    "filMetadata": {
+        "forklaring": "i kombinasjon med name objektet gir occurranceFile filnavn for occurrance fila" ,
+        "OccurranceFile": "_occurrence.txt",
+        "mediaFile": "_media.txt",
+        "museum": "tmu"
+    }
+},
+{
+    "source": "musit",
+    "name": "karplanter",
+    "zipFileName": "vascular_trom",
+    "mediaFile": "_media",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/vascular_trom.zip"
+},
+{
+    "source": "musit",
+    "name": "entomologi",
+    "zipFileName": "entomology_tsz",
+    "mediaFile": "_media",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/entomology_tsz.zip"
+},
+{
+    "source": "musit",
+    "name": "lav",
+    "zipFileName": "lichens_trom",
+    "mediaFile": "_media",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/lichens_trom.zip"
+},
+{
+    "source": "musit",
+    "name": "moser",
+    "zipFileName": "moss_trom",
+    "mediaFile": "_media",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/moss_trom.zip"
+},
+{
+    "source": "musit",
+    "name": "sopp",
+    "zipFileName": "fungus_trom",
+    "mediaFile": "_media",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/fungus_trom.zip"
+}
+]

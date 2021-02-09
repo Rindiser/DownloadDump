@@ -47,9 +47,7 @@ const sortArray = (inputArray, index) => {
     return inputArray
 }
 
-
-
-const saveDataToFile = (data, fileName, filePath) => {
+const saveArrayToFile = (data, fileName, filePath) => {
     console.log('skriver til fil');
     let tsvItem = ''
     fileName = filePath + fileName
@@ -80,6 +78,7 @@ const searchAddDatafromDifferntFiles = (tilFil, fraFil, OutFile) => {
         let fraFilContent = fs.readFileSync(fraFil,'utf8');
         fraArray = fraFilContent.split('\n')
         fraFilContent = '' // tøm variabel
+        fraArray = sortArray(fraArray, 0)
         // get index for 'preparationMaterials', 'preparedBy' , 'preparationDate
         let tempHeader = fraArray[0].split('\t')
         indexOfpreparationMaterials = tempHeader.indexOf('preparationMaterials')
@@ -101,6 +100,13 @@ const searchAddDatafromDifferntFiles = (tilFil, fraFil, OutFile) => {
 
         let count = 0 
         let item = '' 
+        let a = ''
+        let b = ''
+        let c = ''
+        let tsvItem = ''
+        let tsvItems = ''
+        let alreadyFound = 0
+        let stopSeach = 0
         // Les MUSIT fila linje for linje
         readInterface.on('line', function(line) {
             count++
@@ -113,30 +119,88 @@ const searchAddDatafromDifferntFiles = (tilFil, fraFil, OutFile) => {
                 tsvHeader = Header.join('\t')
             } else {
                 item = line.split('\t')
+                alreadyFound = 0
                 for (i = 0; i < fraArray.length; i++) {
+                    // console.log('stopseach: ' + stopSeach);
+                    if (stopSeach === 1 && alreadyFound === 0) {
+                        // console.log('her er det stopp');
+                        stopSeach = 0
+                    // write the item to a new file
+                    try {
+                        tsvItem = line + '\t' + a + '\t' + b + '\t' + c;
+                        tsvItems = tsvItems + tsvItem + '\n';
+                        // console.log('tsvItem: ' + tsvItem)
+                        tsvItem = ''
+                    } catch (error) {
+                        // console.log('tsvItems: ' + tsvItems);                
+                        // console.log('tsvItem: ' + tsvItem);
+                        console.log((error));
+                    }
 
-                // https://stackoverflow.com/questions/237104/how-do-i-check-if-an-array-includes-a-value-in-javascript/25765186#25765186
-                // hvis ID fra fromFile fins i CoremaOccurance file så..    
-                    if (!!~fraArray[i].indexOf(item[indexOfId])> - 1) {
-                        tempResults = fraArray[i]
-                        tempResults = tempResults.split('\t')
-                            // If feltet er tomt bruk N/A i stedet
-                            a = (fraArray[i][2] ? fraArray[i][2] : 'N/A');
-                            b = (fraArray[i][3] ? fraArray[i][3] : 'N/A');
-                            c = (fraArray[i][4] ? fraArray[i][4] : 'N/A');
-                        // add this to the item 
-                        item.push(tempResults[0])
-                        // write the item to a new file
-                        let tsvItem = item.join('\t')
-                        tsvItems =tsvItems + tsvItem + '\n'
-                        tempResults.length = 0
+                        a = ''
+                        b = ''
+                        c = ''
+                        break                    
+                    } else {
+                        // https://stackoverflow.com/questions/237104/how-do-i-check-if-an-array-includes-a-value-in-javascript/25765186#25765186
+                        // hvis ID fra fromFile fins i CoremaOccurance file så..    
+                        if (!!~fraArray[i].indexOf(item[indexOfId])) {
+                            
+                            tempResults = fraArray[i]
+                            tempResults = tempResults.split('\t')
+                            if(alreadyFound === 0){
+                                // console.log('her vil vi være ' + count);
+                                // If feltet er tomt bruk N/A i stedet
+                                a = (tempResults[2] ? tempResults[2] : 'N/A');
+                                b = (tempResults[3] ? tempResults[3] : 'N/A');
+                                c = (tempResults[4] ? tempResults[4] : 'N/A');
+                                a = a + ''
+                                b = b + ''
+                                c = c + ''
+                            // add this to the item
+                            // hvis vi ikke har noe der fra før
+                            alreadyFound = 1
+                            stopSeach = 1
+                            // console.log(alreadyFound);
+                            } else if (alreadyFound === 1) {
+                                console.log('allerede funnet ' + count);
+                                //hvis vi allerede har lagt
+                                a = (tempResults[2] ? a + ' | ' + tempResults[2] : a + ' | ' + 'N/A');
+                                b = (tempResults[3] ? b + ' | ' + tempResults[3] : b + ' | ' + 'N/A');
+                                c = (tempResults[4] ? c + ' | ' + tempResults[4] : c + ' | ' + 'N/A');
+                                a = a + ''
+                                b = b + ''
+                                c = c + ''
+                                // console.log('her kommer a med flere treff');
+                                // console.log(a);
+                                // console.log(alreadyFound);
 
-
+                            }  
+                            tempResults.length = 0;
+                        } else {
+                            alreadyFound = 0
+                            // console.log('found til null');
+                        }
                     }
                 }
             }
-
-
+        }).on('close', function () {
+            const OutFile = testPath + 'dust.txt'
+            const writeStream = fs.createWriteStream(OutFile);
+            const pathName = writeStream.path;
+            writeStream.write(`${tsvHeader}\n`)
+            writeStream.write(`${tsvItems}\n`)
+            writeStream.end()
+            
+            writeStream.on('finish', () => {
+                console.log(`wrote all the array data to file ${pathName}`);
+                tsvItems = ''
+                });
+        
+                // handle the errors on the write process
+            writeStream.on('error', (err) => {
+                console.error(`There is an error writing the file ${pathName} => ${err}`)
+            });
         })
 
 
@@ -145,78 +209,6 @@ const searchAddDatafromDifferntFiles = (tilFil, fraFil, OutFile) => {
     }
 }
 
-const OLDsearchAddDatafromDifferntFiles = (coremaOccurenceOutFile, coremaDataFile) => {
-    let fraArray = ''
-    let tilArray = ''
-    let tempArray = ''
-    // 1. les den sammensatte Coremafila inn i minne
-    if (fs.existsSync(coremaOccurenceOutFile)) {
-        // coremaFileContent = det som skal sorteres, 
-        let coremaFileContent = fs.readFileSync(coremaOccurenceOutFile,'utf8');
-        tempArray = Papa.parse(coremaFileContent)
-        tilArray = tempArray.data
-        // Fjern tomme felter i array
-        tilArray = tilArray.filter(Boolean)
-        tempArray.length = 0
-
-    } else {
-        throw new Error ('File not found' + coremaOccurenceOutFile)
-    }
-    // 2. les fil vi skal ha data fra inn i minne
-    const coremaPreparationFile = folderPath + coremaDataFile + '.txt'
-    if (fs.existsSync(coremaPreparationFile)) {
-        // coremaFileContent = det som skal sorteres, 
-        let coremaFraFileContent = fs.readFileSync(coremaPreparationFile,'utf8');
-        tempArray = Papa.parse(coremaFraFileContent)
-        fraArray = tempArray.data
-        // Fjern tomme felter i array
-        fraArray = fraArray.filter(Boolean)
-        coremaFraFileContent = '' // tøm variabel
-        tempArray.length = 0
-    } else {
-        console.log(coremaPreparationFile);
-        throw new Error ('File not found' + coremaPreparationFile)
-    }
-    // 3. søk igjennom tilfila (1.) etter mathcer basert på frafila (2)
-    // 3.1 finn kollonnen som inneholder ID som vi skal bruke til å matche søk i frafila
-    let indexOfId = fraArray[0].indexOf("id")
-    // 4. legg dataene til i tilfila
-    // 4.1 legg til header row
-    tilArray[0].push('preparationMaterials', 'preparedBy' , 'preparationDate') 
-    // 4.2 søk et treff
-    for (let i = 1, len = fraArray.length; i < len; i++) {
-        count++
-            // console.log(fraArray[i][1]);
-        // https://stackoverflow.com/questions/237104/how-do-i-check-if-an-array-includes-a-value-in-javascript/25765186#25765186
-        try {
-            if (count === 2){ //  les forste linje med data inn i minne
-                lastItem = fraArray[i]
-            
-                if (!!~tilArray[i][0].indexOf(fraArray[i][indexOfId])> -1) {
-                    // If feltet er tomt bruk N/A i stedet
-                    a = (fraArray[i][2] ? fraArray[i][2] : 'N/A');
-                    b = (fraArray[i][3] ? fraArray[i][3] : 'N/A');
-                    c = (fraArray[i][4] ? fraArray[i][4] : 'N/A');
-                    // sjekke i til array om det fins noe der fra før og merge dette
-
-                    tilArray[i].push(a,b,c);
-                    // legg til 
-                    
-                } else {
-                    console.log('Disse bomma');
-                    console.log(fraArray[i]);
-                }
-            }
-        } catch (error) {
-            console.log(error);
-            console.log(i);
-            console.log(tilArray[i]);
-            console.log(fraArray[i]);
-            break
-        }
-    }
-    saveDataToFile(tilArray, testFile, testPath)
-}
 
 const mergeOccurencesPosts = (OccurenceFile) => {
     if (fs.existsSync(OccurenceFile)) {

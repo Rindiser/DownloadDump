@@ -1,0 +1,52 @@
+[
+{
+    "filMetadata": {
+        "forklaring": "i kombinasjon med name objektet gir occurranceFile filnavn for occurrance fila" ,
+        "OccurranceFile": "_occurrence.txt",
+        "mediaFile": "_media.txt",
+        "museum": "um"
+    }
+},
+{
+    "source": "musit",
+    "name": "karplanter",
+    "zipFileName": "vascular_bg",
+    "mediaFile": "_media",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/vascular_bg.zip"
+},
+{
+    "source": "musit",
+    "name": "entomologi",
+    "zipFileName": "entomology_zmbn",
+    "mediaFile": "_media",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/entomology_zmbn.zip"
+},
+{
+    "source": "musit",
+    "name": "lav",
+    "zipFileName": "lichens_bg",
+    "mediaFile": "_media",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/lichens_bg.zip"
+},
+{
+    "source": "musit",
+    "name": "moser",
+    "zipFileName": "moss_bg",
+    "mediaFile": "_media",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/moss_bg.zip"
+},
+{
+    "source": "musit",
+    "name": "sopp",
+    "zipFileName": "fungus_bg",
+    "mediaFile": "_media",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/fungus_bg.zip"
+},
+{
+    "source": "musit",
+    "name": "evertebrater",
+    "zipFileName": "evert_zmbn",
+    "mediaFile": "_media",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/evert_zmbn.zip"
+}
+]
