@@ -121,22 +121,16 @@ const searchAddDatafromDifferntFiles = (tilFil, fraFil, OutFile) => {
                 item = line.split('\t')
                 alreadyFound = 0
                 for (i = 0; i < fraArray.length; i++) {
-                    // console.log('stopseach: ' + stopSeach);
                     if (stopSeach === 1 && alreadyFound === 0) {
-                        // console.log('her er det stopp');
                         stopSeach = 0
                     // write the item to a new file
                     try {
                         tsvItem = line + '\t' + a + '\t' + b + '\t' + c;
                         tsvItems = tsvItems + tsvItem + '\n';
-                        // console.log('tsvItem: ' + tsvItem)
                         tsvItem = ''
                     } catch (error) {
-                        // console.log('tsvItems: ' + tsvItems);                
-                        // console.log('tsvItem: ' + tsvItem);
                         console.log((error));
                     }
-
                         a = ''
                         b = ''
                         c = ''
@@ -145,7 +139,6 @@ const searchAddDatafromDifferntFiles = (tilFil, fraFil, OutFile) => {
                         // https://stackoverflow.com/questions/237104/how-do-i-check-if-an-array-includes-a-value-in-javascript/25765186#25765186
                         // hvis ID fra fromFile fins i CoremaOccurance file så..    
                         if (!!~fraArray[i].indexOf(item[indexOfId])) {
-                            
                             tempResults = fraArray[i]
                             tempResults = tempResults.split('\t')
                             if(alreadyFound === 0){
@@ -161,7 +154,6 @@ const searchAddDatafromDifferntFiles = (tilFil, fraFil, OutFile) => {
                             // hvis vi ikke har noe der fra før
                             alreadyFound = 1
                             stopSeach = 1
-                            // console.log(alreadyFound);
                             } else if (alreadyFound === 1) {
                                 console.log('allerede funnet ' + count);
                                 //hvis vi allerede har lagt
@@ -171,10 +163,6 @@ const searchAddDatafromDifferntFiles = (tilFil, fraFil, OutFile) => {
                                 a = a + ''
                                 b = b + ''
                                 c = c + ''
-                                // console.log('her kommer a med flere treff');
-                                // console.log(a);
-                                // console.log(alreadyFound);
-
                             }  
                             tempResults.length = 0;
                         } else {

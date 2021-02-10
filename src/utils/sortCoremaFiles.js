@@ -1,8 +1,5 @@
 const fs = require('fs');
 
-
-
-
 const coremaFile = 'src/data/test/resourcerelationship.txt'
 
 
@@ -30,7 +27,6 @@ const sortBYUUID = (coremaFile) => {
 
     // write each value of the array on the file breaking line
         arrayOfContent.forEach(value => writeStream.write(`${value}\n`));
-
         // the finish event is emitted when all data has been flushed from the stream
         writeStream.on('finish', () => {
         console.log(`wrote all the array data to file ${pathName}`);

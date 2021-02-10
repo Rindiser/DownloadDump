@@ -41,5 +41,12 @@
     "zipFileName": "fungus_trom",
     "mediaFile": "_media",
     "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/fungus_trom.zip"
+},
+{
+    "source": "musit",
+    "name": "evertebrater",
+    "zipFileName": "evert_tsz",
+    "mediaFile": "_media",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/evert_tsz.zip"
 }
 ]

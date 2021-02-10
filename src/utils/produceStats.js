@@ -1,6 +1,8 @@
 const readline = require('readline');
 const fs = require('fs')
-const fileList = require('./fileList')
+const fileListNhm = require('./fileList')
+const fileListTmu = require('./fileListTmu')
+const fileListUm = require('./fileListUm')
 const statObject2 = require('./statObject')
 const chalk = require('chalk');
 const clone = require('clone');
@@ -167,12 +169,12 @@ const sumYesNo = (total,denne) => {
 // Lagre samlingsobjectet til fil
 // input et object
 // resultat_ en fil med navn statData.json på JSON format
- async function saveObjectToFile(samlingsObj) {
+ async function saveObjectToFile(samlingsObj, museum) {
     console.log(chalk.red('vi lagrer....'));
     return new Promise((resolve, reject) => {
         // stringify JSON Object' 
         const jsonContent = JSON.stringify(samlingsObj);
-        fs.writeFile("./src/data/renamed/statData.json", jsonContent, 'utf8', function (err) {
+        fs.writeFile("./src/data/renamed/" + museum + "statData.json", jsonContent, 'utf8', function (err) {
             if (err) {
                 console.log("An error occured while writing JSON Object to File.");
                 return console.log(err);
@@ -365,7 +367,8 @@ async function processMediaLineByLine(mediaFileWithPath, currentColl, samlingsOb
 
 
 //hovedtall
-const main = async function (file)  {
+const main = async function (file, museum)  {
+    museum = museum + '/'
     // her skal den lese igjennom hver fila og returnere poster som er registrert siste 5 år og poster som samle inn siste 5 år
     // https://codepen.io/rustydev/pen/GBKGKG?editors=0010
     try {
@@ -373,21 +376,21 @@ const main = async function (file)  {
         // for (i = 1, len = 3; i < len; i++) {
                 let currentColl = file[i]
                 
-                fileWithPath = "./src/data/renamed/" + file[i].name + "_occurrence.txt" 
-                mediaFileWithPath = "./src/data/renamed/" + file[i].name + "_media.txt" 
+                fileWithPath = "./src/data/renamed/" + museum + file[i].name + "_occurrence.txt" 
+                mediaFileWithPath = "./src/data/renamed/" + museum + file[i].name + "_media.txt" 
                 // mediaFileWithPath = "./src/data/renamed/karplanter_media.txt" 
                 console.log(fileWithPath);
 
                 // test om fila fins før vi prøver å lage stat
                 if (fs.existsSync(fileWithPath)) {
                     const samlingsObj = await processLineByLine(fileWithPath, currentColl);
-                            await saveObjectToFile(samlingsObj)
+                            await saveObjectToFile(samlingsObj, museum)
                 } else {
                     console.log(chalk.red('Denne fila eksisterer ikke: ' + fileWithPath)); 
                 }
                 if (fs.existsSync(mediaFileWithPath)) {
                 const imageResults = await processMediaLineByLine(mediaFileWithPath, currentColl, samlingsObj);   
-                    await saveObjectToFile(imageResults)
+                    await saveObjectToFile(imageResults, museum)
                 } else {
                     console.log(chalk.red('Denne fila eksisterer ikke: ' + mediaFileWithPath));
                 }
@@ -401,10 +404,15 @@ const main = async function (file)  {
     }
 }
 
-main(fileList)
+async function getStatsAllMuseum() {
+    await main(fileListUm, 'um')
+    await main(fileListTmu, 'tmu')
+    await main(fileListNhm, 'nhm')
+  }
 
+  getStatsAllMuseum()
 
 // exportere funksjonen ut
 module.exports = { 
-    main
+    getStatsAllMuseum
  } 
