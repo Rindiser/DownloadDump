@@ -54,6 +54,34 @@ let totalcollectionSize = 0
     let totTypeStatus = ""
     let countryField = ""
 
+
+// Sorterings funskjon for å sortere objekter 
+// https://www.sitepoint.com/sort-an-array-of-objects-in-javascript/
+function compareValues(key, order = 'asc') {
+  return function innerSort(a, b) {
+    if (!a.hasOwnProperty(key) || !b.hasOwnProperty(key)) {
+      // property doesn't exist on either object
+      return 0;
+    }
+
+    const varA = (typeof a[key] === 'string')
+      ? a[key].toUpperCase() : a[key];
+    const varB = (typeof b[key] === 'string')
+      ? b[key].toUpperCase() : b[key];
+
+    let comparison = 0;
+    if (varA > varB) {
+      comparison = 1;
+    } else if (varA < varB) {
+      comparison = -1;
+    }
+    return (
+      (order === 'desc') ? (comparison * -1) : comparison
+    );
+  };
+}
+
+
 // Teller antall ganger en key er i fila, f.eks. hvor mange ganger er land = Norge, 
 // svaret er {key:value}, {Norge: 125}
 // obj er et tomt array for å lagre dataene,
@@ -106,30 +134,60 @@ const transformObject = (obj, name) => {
 // summere opp samlingsstørrelsen på tvers av samlinger på år
 // input year, variabelen der samlingsstørrelsen for en samling er lagret
 //output akkumulativYear en array av objekter med samlingstørrelse per år [{year:1850, number:1233}, {year:1851, number: 1255}]
-const calcAkkumulativtYear = (year) => {
-    year.sort((a, b) => (b.year < a.year) ? 1 : (a.year === b.year) ? ((a.number - b.number) ? 1 : -1) : -1 )
-    // akkumulativ samlingsstørrelse
+// const calcAkkumulativtYear = (year) => {
+//     year.sort((a, b) => (b.year < a.year) ? 1 : (a.year === b.year) ? ((a.number - b.number) ? 1 : -1) : -1 )
+//     // akkumulativ samlingsstørrelse
+//     let element = 0
+//     let lengthTest = "" // for å test om årstallet har 4 nummer, eller blir det problemer
+//     for (let i = 0; i < year.length; i++) {
+//         lengthTest = ' ' + year[i].year
+//         if (isNaN(year[i].number) ) {
+//             console.log('nei');
+//         }
+//         else if (lengthTest.length <= 4) {
+//             console.log(year[i].year);
+//         } else if (year[i].year > 2021 || year[i].year < 1500) {
+//             console.log(year[i].year);
+//         } else {
+//         element += year[i].number;
+//         akkumulativYear[i] = {
+//             year: year[i].year,
+//             number: element
+//             }    
+//         }
+//     }
+//     akkumulativYear.sort((a, b) => (b.akkumulativYear < a.akkumulativYear) ? 1 : (a.akkumulativYear === b.akkumulativYear) ? ((a.number - b.number) ? 1 : -1) : -1 )
+//     return akkumulativYear
+// }
+// Vi tar arrayen Years og legger sammen alle årene så vi får akkumulativ størrelse
+// Denne trenger bare kjøre 1 gang etter at alle samlingene er gjennomgått, eller kjøres etter hver samling og skrive over
+const addYearsAkkumulativt = (year) => {
+    cloneYear = clone(year)
+    cloneYear.sort(compareValues('year')) // from small to large
     let element = 0
     let lengthTest = "" // for å test om årstallet har 4 nummer, eller blir det problemer
-    for (let i = 0; i < year.length; i++) {
+    let accYear = []
+    for (let i = 0; i < cloneYear.length; i++) {
         lengthTest = ' ' + year[i].year
         if (isNaN(year[i].number) ) {
             console.log('nei');
         }
         else if (lengthTest.length <= 4) {
             console.log(year[i].year);
-        } else if (year[i].year > 2020 || year[i].year < 1500) {
+        } else if (year[i].year > 2021 || year[i].year < 1500) {
             console.log(year[i].year);
         } else {
-        element += year[i].number;
-        akkumulativYear[i] = {
-            year: year[i].year,
+        element += cloneYear[i].number;
+        accYear[i] = {
+            year: cloneYear[i].year,
             number: element
-            }    
-        }
-    }
-    return akkumulativYear
+            }   
+        } 
+    };
+    return accYear
+
 }
+
 
 // add objects so we get totalnumbers for collection
 //input [{key: value},{key:value},{key:value}], sortby sier om resultatet skal sortres etter key eller value
@@ -151,7 +209,7 @@ const sumData = (arr, currentArr, sortby = 'value') => {
     if(sortby === 'value'){
         res.sort((a, b) => (b.number - a.number) ? 1 : (a.number === b.number) ? ((a.key > b.key) ? 1 : -1) : -1 )
     } else {
-        res.sort((a, b) => (b.key - a.key) ? 1 : (a.key === b.key) ? ((a.number - b.number) ? 1 : -1) : -1 )  
+        res.sort((a, b) => (b.key < a.key) ? 1 : (a.key === b.key) ? ((a.number - b.number) ? 1 : -1) : -1 )  
     }
     return res
 }
@@ -246,7 +304,7 @@ async function processLineByLine(fileWithPath, currentColl) {
         country = transformObject(country, 'country')
         year = transformObject(year, 'year')
         // regn ut samlingsstørrelse på år for currentCollection
-        akkumulativYear = calcAkkumulativtYear(year)
+        // akkumulativYear = calcAkkumulativtYear(year)
         recordedBy = transformObject(recordedBy, 'recordedBy')
         order = transformObject(order, 'order')
         family = transformObject(family, 'family')
@@ -260,9 +318,10 @@ async function processLineByLine(fileWithPath, currentColl) {
         // lage total object
         totalcollectionSize = totalcollectionSize + linesCount
         // regn ut samlingsstørrelse på for alle samlingene
-        totAkkumulativYear = sumData(totAkkumulativYear, akkumulativYear, 'key')
+        // totAkkumulativYear = sumData(totAkkumulativYear, akkumulativYear, 'key')
         totcountry = sumData(totcountry, country)
         totYear = sumData(totYear, year, 'key')
+        totAkkumulativYear =  addYearsAkkumulativt(totYear)
         totRecordedBy = sumData(totRecordedBy, recordedBy)
         totTypeStatus = sumData(totTypeStatus, typeStatus)
         // summer opp antallet poster med koordinater og uten koordinater
@@ -378,6 +437,7 @@ const main = async function (file, museum)  {
                 
                 fileWithPath = "./src/data/renamed/" + museum + file[i].name + "_occurrence.txt" 
                 mediaFileWithPath = "./src/data/renamed/" + museum + file[i].name + "_media.txt" 
+                multiMediaFileWithPath = "./src/data/renamed/" + museum + file[i].name + "_multimedia.txt" 
                 // mediaFileWithPath = "./src/data/renamed/karplanter_media.txt" 
                 console.log(fileWithPath);
 
@@ -391,6 +451,9 @@ const main = async function (file, museum)  {
                 if (fs.existsSync(mediaFileWithPath)) {
                 const imageResults = await processMediaLineByLine(mediaFileWithPath, currentColl, samlingsObj);   
                     await saveObjectToFile(imageResults, museum)
+                } else if (fs.existsSync(multiMediaFileWithPath)) {
+                    const imageResults = await processMediaLineByLine(multiMediaFileWithPath, currentColl, samlingsObj);   
+                        await saveObjectToFile(imageResults, museum)
                 } else {
                     console.log(chalk.red('Denne fila eksisterer ikke: ' + mediaFileWithPath));
                 }

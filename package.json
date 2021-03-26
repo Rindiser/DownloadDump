@@ -10,7 +10,8 @@
     "dc": "nodemon --max-old-space-size=4096 src/utils/trimFiles.js -e js",
     "stm": "nodemon --max-old-space-size=8096 src/utils/GM_stitchFiles_musit.js -e js",
     "sort": "nodemon --max-old-space-size=8096 src/utils/sortCoremaFiles.js -e js",
-    "add": "nodemon --max-old-space-size=8096 src/utils/addCoremaToMUSIT.js -e js"
+    "add": "nodemon --max-old-space-size=8096 src/utils/addCoremaToMUSIT.js -e js",
+    "id": "nodemon --max-old-space-size=8096 src/utils/personID.js -e js"
   },
   "author": "",
   "license": "ISC",
