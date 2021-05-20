@@ -11,22 +11,23 @@
     "stm": "nodemon --max-old-space-size=8096 src/utils/GM_stitchFiles_musit.js -e js",
     "sort": "nodemon --max-old-space-size=8096 src/utils/sortCoremaFiles.js -e js",
     "add": "nodemon --max-old-space-size=8096 src/utils/addCoremaToMUSIT.js -e js",
-    "id": "nodemon --max-old-space-size=8096 src/utils/personID.js -e js"
+    "id": "nodemon --max-old-space-size=8096 src/utils/personID.js -e js",
+    "adb": "nodemon --max-old-space-size=8096 src/utils/adbAPI.js -e js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "abort-controller": "^3.0.0",
-    "adm-zip": "^0.4.14",
-    "chalk": "^3.0.0",
+    "adm-zip": "^0.5.5",
+    "chalk": "^4.1.0",
     "clone": "^2.1.2",
-    "convert-array-to-csv": "^1.0.12",
+    "convert-array-to-csv": "^2.0.0",
     "csv-writer": "^1.6.0",
-    "mkdirp": "^1.0.3",
+    "mkdirp": "^1.0.4",
     "node-fetch": "^2.6.1",
-    "papaparse": "^5.2.0"
+    "papaparse": "^5.3.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.4"
+    "nodemon": "^2.0.7"
   }
 }
