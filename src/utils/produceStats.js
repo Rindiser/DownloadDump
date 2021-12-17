@@ -3,6 +3,7 @@ const fs = require('fs')
 const fileListNhm = require('./fileList')
 const fileListTmu = require('./fileListTmu')
 const fileListUm = require('./fileListUm')
+const fileListNbh = require('./fileListNbh')
 const statObject2 = require('./statObject')
 const chalk = require('chalk');
 const clone = require('clone');
@@ -19,6 +20,10 @@ let totObject = {}
 totObject = clone(statObject2) // deep clone av tot object
 
 let totalcollectionSize = 0
+
+let collectionsIncluded = {
+    collectionsIncluded: []
+}
 
 // objekter for mellomlagring av data, 
 // vi bruker array av objekter da dette kan sortes senere[{key:Norge, number:1233},{key:Sverige, number:4558}]
@@ -246,7 +251,7 @@ const sumYesNo = (total,denne) => {
 // funskjon for å ta ut data fra filene
 // input: fileWithPath = filnavne med path som er en dump av databasen i Darwin Core format
 // currentColl som er filnavn ut extention, eg. Vasular_o
-async function processLineByLine(fileWithPath, currentColl) {   
+async function processLineByLine(fileWithPath, currentColl, collList) {   
    return new Promise((resolve, reject) => {
    const readInterface = readline.createInterface({      
        input: fs.createReadStream(fileWithPath),
@@ -345,6 +350,7 @@ async function processLineByLine(fileWithPath, currentColl) {
         totObject[1].geography.coordinates = totalhasCoordinates
         totObject[3].collectionSize = totalcollectionSize
         totObject[3].accumulativeSize =totAkkumulativYear
+        totObject[3].collections = collList
         totObject[4].typeStatus = totTypeStatus
 
         // hekte på objektene(statObject) for hver samling til et felles objekt(samlingsObj)
@@ -427,51 +433,62 @@ async function processMediaLineByLine(mediaFileWithPath, currentColl, samlingsOb
 
 //hovedtall
 const main = async function (file, museum)  {
+    const currentMuseum = museum
     museum = museum + '/'
-    // her skal den lese igjennom hver fila og returnere poster som er registrert siste 5 år og poster som samle inn siste 5 år
+    // her skal den lese igjennom hver fila og returnere poster som er registrer
     // https://codepen.io/rustydev/pen/GBKGKG?editors=0010
     try {
-    for (i = 1, len = file.length; i < len; i++) {
-        // for (i = 1, len = 3; i < len; i++) {
-                let currentColl = file[i]
-                
-                fileWithPath = "./src/data/renamed/" + museum + file[i].name + "_occurrence.txt" 
-                mediaFileWithPath = "./src/data/renamed/" + museum + file[i].name + "_media.txt" 
-                multiMediaFileWithPath = "./src/data/renamed/" + museum + file[i].name + "_multimedia.txt" 
-                // mediaFileWithPath = "./src/data/renamed/karplanter_media.txt" 
-                console.log(fileWithPath);
+        for (i = 1, len = file.length; i < len; i++) {
+            // for (i = 1, len = 3; i < len; i++) {
+            let currentColl = file[i]
+            
+            fileWithPath = "./src/data/renamed/" + museum + file[i].name + "_occurrence.txt" 
+            mediaFileWithPath = "./src/data/renamed/" + museum + file[i].name + "_media.txt" 
+            multiMediaFileWithPath = "./src/data/renamed/" + museum + file[i].name + "_multimedia.txt" 
+            // mediaFileWithPath = "./src/data/renamed/karplanter_media.txt" 
+            console.log(fileWithPath);
 
-                // test om fila fins før vi prøver å lage stat
-                if (fs.existsSync(fileWithPath)) {
-                    const samlingsObj = await processLineByLine(fileWithPath, currentColl);
-                            await saveObjectToFile(samlingsObj, museum)
-                } else {
-                    console.log(chalk.red('Denne fila eksisterer ikke: ' + fileWithPath)); 
-                }
-                if (fs.existsSync(mediaFileWithPath)) {
+            // test om fila fins før vi prøver å lage stat
+            if (fs.existsSync(fileWithPath)) {
+                collectionsIncluded.collectionsIncluded[i-1] = file[i].name
+                collList = collectionsIncluded
+                const samlingsObj = await processLineByLine(fileWithPath, currentColl, collList);
+                await saveObjectToFile(samlingsObj, museum)
+                
+            } else {
+                console.log(chalk.red('Denne fila eksisterer ikke: ' + fileWithPath)); 
+            }
+            if (fs.existsSync(mediaFileWithPath)) {
                 const imageResults = await processMediaLineByLine(mediaFileWithPath, currentColl, samlingsObj);   
-                    await saveObjectToFile(imageResults, museum)
-                } else if (fs.existsSync(multiMediaFileWithPath)) {
-                    const imageResults = await processMediaLineByLine(multiMediaFileWithPath, currentColl, samlingsObj);   
-                        await saveObjectToFile(imageResults, museum)
-                } else {
-                    console.log(chalk.red('Denne fila eksisterer ikke: ' + mediaFileWithPath));
-                }
-        }
+                await saveObjectToFile(imageResults, museum)
+            } else if (fs.existsSync(multiMediaFileWithPath)) {
+                const imageResults = await processMediaLineByLine(multiMediaFileWithPath, currentColl, samlingsObj);   
+                await saveObjectToFile(imageResults, museum)
+            } else {
+                console.log(chalk.red('Denne fila eksisterer ikke: ' + mediaFileWithPath));
+            }
+            }
         if (i= len) {
         console.log(chalk.blue('vi er ferdige med ' + len + ' filer'));
         }
-        
     } catch (e) {
         console.error(e);
     }
+    console.log('*********************');
+    console.log(collectionsIncluded);
+    console.log('*********************');
 }
 
 async function getStatsAllMuseum() {
-    await main(fileListUm, 'um')
-    await main(fileListTmu, 'tmu')
-    await main(fileListNhm, 'nhm')
-  }
+    try {
+        await main(fileListNbh, 'nbh')
+        await main(fileListUm, 'um')
+        await main(fileListTmu, 'tmu')
+        await main(fileListNhm, 'nhm')
+    } catch (error) {
+        console.log(error);       
+    }
+}
 
   getStatsAllMuseum()
 

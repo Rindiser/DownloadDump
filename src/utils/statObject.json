@@ -30,7 +30,8 @@
     },
      {
          "collectionSize" : "",
-         "accumulativeSize" : ""
+         "accumulativeSize" : "",
+         "collections" : ""
      },
      {
          "taxon": {

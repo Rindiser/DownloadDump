@@ -1,8 +1,10 @@
 const readline = require('readline');
 const fs = require('fs');
 const fileList = require('./fileList');
+const columns = require('./stitchObject')
 const chalk = require('chalk');
 const { resolve } = require('path');
+
 
 const musitFile = 'src/data/test/karplanter_occurrence.txt';
 const coremaFile = 'src/data/test/resourcerelationship.txt';
@@ -15,215 +17,93 @@ const coremaOccurenceOutFile = 'src/data/test/coremaoccurenceOUT.txt';
 const orgUUIDobjekt = 'src/data/test/orgUUIDobjekt.txt'
 const folderPath = 'src/data/test/'
 
-const columnsIWant = ['organismID', 'id', 'modified', 'institutionCode', 'collectionCode', 'catalogNumber',  'recordedBy', 'eventDate', 'continent', 'waterBody', 'country', 'stateProvince', 'county', 'locality', 'decimalLatitude', 'decimalLongitude', 'identifiedBy', 'dateIdentified', 'typeStatus', 'scientificName', 'kingdom', 'class', 'order', 'family', 'genus',  'specificEpithet', 'infraspecificEpithet', 'verbatimTaxonRank']
+const coreamColumnsIWant = ['organismID', 'id', 'modified', 'institutionCode', 'collectionCode', 'catalogNumber',  'recordedBy', 'eventDate', 'continent', 'waterBody', 'country', 'stateProvince', 'county', 'locality', 'decimalLatitude', 'decimalLongitude', 'identifiedBy', 'dateIdentified', 'typeStatus', 'scientificName', 'kingdom', 'class', 'order', 'family', 'genus',  'specificEpithet', 'infraspecificEpithet', 'verbatimTaxonRank']
+const musitColunmsIWant = []
 const coremaCollectionsToMerge = ['dna_entomologi', 'dna_fungi_lichens' , 'dna_karplanter']
 
-// Sorts the UUIDS alphabetically in the first column of the file
-const sortCoremaOut = async (file) => {
-return new Promise(function(resolve, reject) {
-    try {
-    console.log(chalk.green('3. starting:  sorCoremaOut'));
-    let header = ''
-    let elements = ''
-        let filContent = fs.readFileSync(file,'utf8');
-        arrayToSort = filContent.split('\n')
-        filContent = '' // tøm variabel
-        for (let index = 0; index < arrayToSort.length; index++) {
-            let element = arrayToSort[index];
-            if(index === 0) {
-                header = element
-            }
-            let parts = element.split('\t')
-            let part = parts[0].toString()
-            if(part.indexOf('|') > -1) {
-                uuidArray = part.split(' | ')
-                uuidArray.sort();
-                part = uuidArray.join(' | ')
-                parts[0] = part
-                element = parts.join('\t')
-                elements = elements + element + '\n'
-                uuidArray.length = 0
-            }
-            part = ''
-            parts.length = 0
-        }
-        elements = header + '\n' + elements
-        fs.writeFileSync(file, elements)
-        console.log(chalk.blue('3. done:  sorCoremaOut'));
-        resolve(true)
-    } catch (error) {
-        reject(error);
-    }
-}) 
-}
 
-// Sorter en array av arrays på en bestemt index
-const sortArray = async (inputArray, index) => {
+const prepareCoremaOccunaceFile = async (occuranceFile, outFile) => {
     return new Promise(function(resolve, reject) {
         try {
-    // Overskriftsraden puttes i en egen array
-    const headerArray = inputArray.shift()
-    // Fjern tomme felter i array
-    inputArray = inputArray.filter(Boolean)
-    // sorts lines alphabethic as string
-    inputArray.sort(function(a, b) {
-        return a[index] - b[index];
-    });
-    // add header to the top
-    inputArray.unshift(headerArray)
-    inputArray = inputArray.flat() // for å unngå arrays inni arrays
+            console.log(chalk.green('1. starting:  prepareCoremaOccunaceFile :' + occuranceFile ));
+            const readInterface = readline.createInterface({
+                input: fs.createReadStream(occuranceFile),
+                console: false
+            })
 
-    resolve(inputArray)
-    } catch (error) {
-        reject(error);           
-    }
-}) 
-}
-
-// Tar en fil som består av OrgUUID og MusitNo per linje og gjør det om til et key value object, med orgUUID som key
-const makeOrgUUIDandMusitNoObject = async (OrgUUIDMusitNoList, tilFil) => {
-    return new Promise(function(resolve, reject) {
-        try {
-            console.log(chalk.green('3C. starting:  makeMusitNoKeyedObject'));
-            let fixedValue = ''
-            let keyName = ''
-            let organismIdObject = {}
-            let fraFilContent = fs.readFileSync(OrgUUIDMusitNoList,'utf8');
-            fraArray = fraFilContent.split('\n')
-            fraFilContent = '' // tøm variabel
-            fraArray = sortArray(fraArray, 0)
-
-            // bygge et objekt med key = organismeUUID value = resourcerelationship UUID
-            for (let index = 0; index < fraArray.length; index++) {
-                const lineArray = fraArray[index].split('\t');
-                // bygg objekt
-                    keyName = lineArray[0]
-                    // remove urn:catalog: amd replace : with -
-                    fixedValue = lineArray[1]
-                    fixedValue = fixedValue.replace('urn:catalog:', '')
-                    fixedValue = fixedValue.replace(':', '-')
-                    fixedValue = fixedValue.replace(':', '-')
-                    organismIdObject[keyName] = fixedValue
-            }
-            fixedValue = ''
-            keyName = ''
-            fraArray.length = 0
-            fs.writeFileSync(tilFil, JSON.stringify(organismIdObject))
-            console.log(chalk.blue('3C. Finnished:  makeMusitNoKeyedObject'));
-            resolve(tilFil)
-        } catch (error) {
-            reject(new Error(error));    
-        }
-    })
-}
-
-// lag det totale coremaobjekt om til et objekt som er keyed med musit nummer
-const makeMusitNoKeyedObject = async (coremaMergedObject,OrgUUIDMusitNoList, tilFil) => {
-    return new Promise(function(resolve, reject) {
-        try {
-            let items = ''
-            let item = ''
-            let musitNo = ''
-            console.log(chalk.green('8. starting:  makeMusitNoKeyedObject'));
-            let coremaTotalObject = fs.readFileSync(coremaMergedObject,'utf8');
-            coremaTotalObject = JSON.parse(coremaTotalObject)
-            
-            let MusitNoList = fs.readFileSync(OrgUUIDMusitNoList,'utf8');
-            MusitNoList = JSON.parse(MusitNoList)
-
-            // for (const key in coremaTotalObject) {
-            //     if (Object.hasOwnProperty.call(coremaTotalObject, key)) {
-            //         const element = coremaTotalObject[key];
-            //         item = coremaTotalObject[value]
-            //         MusitNoList[element]
-                    
-            //     }
-
-            for (const [key, value] of Object.entries(coremaTotalObject)) {
-                // console.log(key, value)
-                musitNo = MusitNoList[key]
-                // console.log(musitNo);
-                }
-            
-
-
-
-            fs.writeFileSync(tilFil, items)
-            console.log(chalk.blue('8. finnished:  makeMusitNoKeyedObject'));
-            resolve(tilFil)
-        } catch (error) {
-            reject(new Error(error));    
-        }
-    })
-}
-
-
-// data må være en array of arrays
-const saveArrayToFile = async (data, fileName, filePath) => {
-    return new Promise(function(resolve, reject) {
-        try {
-            let tsvItems = '';
-            console.log('skriver til fil');
-            let tsvItem = ''
-            fileName = filePath + fileName
-            // gjør array om til string'
-            //Sjekk om det er en array of array eller bare en array
-
-            if(data[0][0].length > 1) {
-                for (let index = 0; index < data.length; index++) {
-                tsvItem = data[index].join('\t')
-                tsvItems =tsvItems + tsvItem + '\n'
-                }
-            } else{
-                // hvis det er en array
-                for (let index = 0; index < data.length; index++) {
-                    tsvItem = data[index]
-                    tsvItems =tsvItems + tsvItem + '\n'
-                    }
-            }
-            const writeStream = fs.createWriteStream(fileName);
+            const writeStream = fs.createWriteStream(outFile);
             const pathName = writeStream.path;
-            
-            writeStream.write(tsvItems)
-            writeStream.end()
-            writeStream.on('finish', () => {
-                console.log(`wrote all the array data to file ${pathName}`);
-                });
-            
-                // handle the errors on the write process
-            writeStream.on('error', (err) => {
-                console.error(`There is an error writing the file ${pathName} => ${err}`)
-            });
-        resolve(fileName)
+            const totHeader = columns[0].totalColumnListFinal.join('\t')
+            // console.log(totHeader);
+            writeStream.write(columns[0].columnListCorema.join('\t'))
+            // writeStream.write(totHeader)
+            let count = 0  
+            // mapping object for the order of columns
+            let indexObj = {}
+            for (let index = 0; index < columns[0].columnListCorema.length; index++) {
+                indexObj[columns[0].columnListCorema[index]] = index
+            }
+            // push array with dummy data to create the same amount of couluns in Corema file as it is in Musit file
+            let pushArray = []
+            for (let k = 0; k < columns[0].columnsToAddToCoremaFile.length; k++) {
+               const element = columns[0].columnsToAddToCoremaFile[k]
+               pushArray.push(indexObj[element])
+            }
+            let mapArray = []
+            readInterface.on('line', function(line) {
+                count++
+                let item = []
+                let row = []
 
+                if(count === 1){
+                   
+                    //  make an array with index of where the columns should be
+                    item = line.split('\t')
+                    for (let i = 0; i < columns[0].columnListCorema.length; i++) {
+                        const element = columns[0].columnListCorema[i]
+                        for (let index = 0; index < item.length; index++) {
+                            if( element === item[index])
+                            mapArray.push(index)
+                        } 
+                    }
+                    item.length = 0
+                } else {
+                    item = line.split('\t')
+
+                    // rearrange and reduce CoremaOccurrance file
+                    row.push(mapArray.map(i => item[i]))
+                    // console.log(pushArray);
+                    //push dummy data to line
+                    // for (let index = 0; index < pushArray.length; index++) {
+                    //     const element = pushArray[index];
+                    //     row.splice(element, 0, '')
+                    // }
+                    row = row.flat()
+                    let newLine = row.join('\t')
+                    writeStream.write(newLine + '\n')
+                    item.length = 0
+                    newLine = ''
+                }
+
+                // console.log(mapArray);asfd
+            }).on('close', function  () {
+                writeStream.end()
+                writeStream.on('finish', () => {
+                    console.log(`wrote all the array data to file ${pathName}`);
+                    console.log(chalk.blue('1. done:  prepareCoremaOccunaceFile'));
+                    resolve(outFile)
+                    });
+                // handle the errors on the write process
+                writeStream.on('error', (err) => {
+                    console.error(`There is an error writing the file ${pathName} => ${err}`)
+                });
+            })
         } catch (error) {
-            reject(new Error(error));     
+            reject(new Error(error));
         }
     })
-
 }
 
-const saveVariableToFile = (data, FileName, filepath, callback) => {
-    let tsvItems = '';
-    console.log('saving file: ' + filepath + FileName );
-    const OutFile = filepath + FileName
-    const writeStream = fs.createWriteStream(OutFile);
-    const pathName = writeStream.path;
-    writeStream.write(data)
-    writeStream.end()
-    
-    writeStream.on('finish', () => {
-        console.log(`wrote all the array data to file ${pathName}`);
-        tsvItems = ''
-  
-        });
-
-    // handle the errors on the write process
-    writeStream.on('error', (err) => {
-        console.error(`There is an error writing the file ${pathName} => ${err}`)
-    });
-
-}
 
 const addOrgIdtoMusitFiles = async (IdAndOrgIdfile, fraFil, newFile) => {
     return new Promise(function(resolve, reject) {
@@ -308,7 +188,7 @@ const addOrgIdtoEventFiles = async (IdAndOrgIdfile, fraFil, newFile) => {
     return new Promise(function(resolve, reject) {
         try {
             console.time("mergeEventFiles");
-            console.log(chalk.green('A. starting:  mergeEventFiles'));
+            console.log(chalk.green('A. starting:  addOrgIdtoEventFiles'));
             let items = ''
             let itemArry = []
 
@@ -317,16 +197,15 @@ const addOrgIdtoEventFiles = async (IdAndOrgIdfile, fraFil, newFile) => {
             tilArray = tilFilContent.split('\n')
             tilFilContent = '' // tøm variabel
             const header = 'OrganismUUID' + '\t' + tilArray[0] 
-            tilArray = sortArray(tilArray, 0)
+            tilArray.splice(0,1)
+            tilArray.sort()
 
             let coremaOutFileContent = fs.readFileSync(IdAndOrgIdfile,'utf8');
             coremaOutFileArray = coremaOutFileContent.split('\n')
             coremaOutFileContent = '' // tøm variabel
+            coremaOutFileArray.splice(0,1)
+            coremaOutFileArray.sort()
 
-            coremaOutFileArray = sortArray(coremaOutFileArray, 0)
-
-
-            
             for (let index = 1; index < tilArray.length; index++) {
                 const element = tilArray[index];
                 const elements = element.split('\t')
@@ -362,6 +241,7 @@ const addOrgIdtoEventFiles = async (IdAndOrgIdfile, fraFil, newFile) => {
                     last = now
                 }
             } else {
+
                 cleanArray = itemArry
             }
             cleanArray.unshift(header)
@@ -372,260 +252,13 @@ const addOrgIdtoEventFiles = async (IdAndOrgIdfile, fraFil, newFile) => {
             fs.writeFileSync(newFile, cleanArray)
             itemArry.length = 0
             cleanArray.length = 0
-            console.log(chalk.blue('A. finnished:  mergeEventFiles'));
+            console.log(chalk.blue('A. finnished:  addOrgIdtoEventFiles'));
             console.timeEnd("mergeEventFiles");
             resolve(newFile)
         } catch (error) {
             reject(new Error(error));     
         }
     })
-}
-
-//Add organism UUID to the first column of file
-const addOrgamismUUIDtoFile = async (organisemUUIDObjekt, tilFil) => {
-return new Promise(function(resolve, reject) {
-    try {
-        console.log(chalk.green('4B. starting:  addOrgamismUUIDtoFile'));
-        console.time("addOrgamismUUIDtoFile");
-        let UUIDObjekt = {}
-        let item = ''
-        let items = ''
-        let headerRow = ''
-            UUIDObjekt = fs.readFileSync(organisemUUIDObjekt,'utf8');
-            UUIDObjekt = JSON.parse(UUIDObjekt)
-
-            let tilFilContent = fs.readFileSync(tilFil,'utf8');
-            tilArray = tilFilContent.split('\n')
-            tilFilContent = '' // tøm variabel
-            tilArray = sortArray(tilArray, 0)
-  
-        // add orgUUID to each line of tilFile
-        for (let index = 0; index < tilArray.length; index++) {
-            if(index ===0) {
-                headerRow = 'organismUUID' + '\t' + tilArray[0]
-            } else {
-                const element = tilArray[index].split('\t');
-                let objKey = element[0]
-                if (objKey.includes('|')) {
-                    tempArray = objKey.split('|')
-                    objKey = tempArray[0]
-                    objKey = objKey.trim()
-                }
-                item = UUIDObjekt[objKey] + '\t' + tilArray[index] + '\n'
-                items = items + item
-            }
-        }
-        items = headerRow + '\n' + items
-        fs.writeFileSync(tilFil, items)
-        console.log(chalk.blue('4B. finnished:  addOrgamismUUIDtoFile'));
-        console.timeEnd("addOrgamismUUIDtoFile");
-        resolve(tilFil)
-    } catch (error) {
-        reject(new Error(error));     
-    }
-})
-}
-
-//lager et objekt som kombinerer organisemUUID med resourceRelationship ID, skal brukes i addOrgamismUUIDtoFile, eventFile = multimedia.txt eller preparation.txt osv
-const makeOrganimsUUIDobjekt = async (coremaOccuranceFile) => {
-return new Promise(function(resolve, reject) {
-    try {
-    let tsvItems = '';
-    console.log(chalk.green('4. starting:  makeOrganimsUUIDobject'));
-    const organismIdObject = {}
-    let keyName = ''
-    let severalUUIDs = []
- 
-    let fraFilContent = fs.readFileSync(coremaOccuranceFile,'utf8');
-    fraArray = fraFilContent.split('\n')
-    fraFilContent = '' // tøm variabel
-    fraArray = sortArray(fraArray, 0)
-    // bygge et objekt med key = organismeUUID value = resourcerelationship UUID
-    for (let index = 0; index < fraArray.length; index++) {
-        const lineArray = fraArray[index].split('\t');
-        // console.log(lineArray);
-        // bygg objekt
-        if (lineArray[0].indexOf('|') > -1){
-            // console.log(chalk.blue('har flere uuider'));
-            severalUUIDs = lineArray[0].split('|')
-            // trim whitespace
-            for (var i = 0; i < severalUUIDs.length; i++) {
-                severalUUIDs[i] = severalUUIDs[i].trim()
-            }
-            for (let index = 0; index < severalUUIDs.length; index++) {
-            keyName = severalUUIDs[index]
-            organismIdObject[keyName] = lineArray[2]
-            // console.log(organismIdObject[keyName]);   
-            }
-        } else {
-            keyName = lineArray[0]
-            organismIdObject[keyName] = lineArray[2]  
-        }
-    } 
-
-    const OutFile = testPath + 'orgUUIDobjekt.txt'
-    // console.log(organismIdObject);
-    fs.writeFileSync(OutFile, JSON.stringify(organismIdObject))
-    console.log(chalk.blue('4. finnished:  makeOrganimsUUIDobject'));
-    tsvItems = ''
-    resolve(OutFile)
-
-    } catch (error) {
-        reject(new Error(error));
-    }
-})
-}
-
-// Legger til informasjon fra en Coremafile til  Occurance Fila
-const AddPreparationToCoremaOUT = (tilFil, fraFil, OutFile) => {
-    let results = '';
-    let tempResults = '';
-    let tsvHeader = '';
-
-    console.time("searchAddDatafromDifferntFiles");
-    fraFil = folderPath + fraFil + '.txt'
-    if (fs.existsSync(fraFil)) {
-        let fraFilContent = fs.readFileSync(fraFil,'utf8');
-        fraArray = fraFilContent.split('\n')
-        fraFilContent = '' // tøm variabel
-        fraArray = sortArray(fraArray, 0)
-        // console.log(fraArray);
-        // get index for 'preparationMaterials', 'preparedBy' , 'preparationDate
-        let tempHeader = fraArray[0].split('\t')
-        indexOfpreparationMaterials = tempHeader.indexOf('preparationMaterials')
-        indexOfpreparedBy = tempHeader.indexOf('preparedBy')
-        indexOfpreparationDate = tempHeader.indexOf('preparationDate')
-        tempHeader.length = 0
-         // fjern headerraden
-         fraArray.shift()
-    } else {
-        throw new Error ('File not found ' + fraFil)
-    }
-
-    if (fs.existsSync(tilFil)) {       
-        const writeStream = fs.createWriteStream(OutFile);
-        const pathName = writeStream.path;
-        
-        const readInterface = readline.createInterface({
-            input: fs.createReadStream(tilFil),
-            console: false
-        })
-        let count = 0 
-        let item = '' 
-        let a = ''
-        let b = ''
-        let c = ''
-        let tsvItem = ''
-        let tsvItems = ''
-        let alreadyFound = 0
-        let stopSeach = 0
-        let raskTeller = 10
-        let multipleTreff = 0
-        let startIndex = 0
-        // Les MUSIT fila linje for linje
-        readInterface.on('line', function(line) {
-            count++
-            if(count === raskTeller) {
-                console.log(chalk.red('vi er kommet til: ') + count);
-                raskTeller = raskTeller + 1000 
-            }
-
-            if (count === 1) {
-                // header row 
-                Header =  line.split('\t')
-                // legg til felt fr coremaUUID
-                Header.push('preparationMaterials', 'preparedBy' , 'preparationDate')
-                indexOfId = Header.indexOf('id')
-                tsvHeader = Header.join('\t')
-            } else {
-                item = line.split('\t')
-                // console.log(startIndex);
-
-                for (i = 0; i < fraArray.length; i++) {
-                    if (stopSeach === 1 && alreadyFound === 0) {
-                        stopSeach = 0
-                    // add the item to variable
-                        tsvItem = line + '\t' + a + '\t' + b + '\t' + c;
-                        tsvItems = tsvItems + tsvItem + '\n';
-                        tsvItem = ''
-                        a = ''
-                        b = ''
-                        c = ''
-
-                        // fjern alle radene vi har søk med og fått treff på fra array
-                        // startIndex = i - multipleTreff
-                        // console.log('her skal vi strarte å slette: ' + startIndex );
-                        // console.log(chalk.blue(' Så mange skal vi fjerne: ') + multipleTreff );
-                        // sletta = fraArray.splice(startIndex, multipleTreff)
-                        // console.log(fraArray.length);
-                        // console.log(sletta)
-                        // console.log(chalk('---'));
-                        // console.log(tsvItem);
-                        startIndex = i +1
-                        // console.log(startIndex);
-                        // multipleTreff = 0
-                        break
-                    } else {
-                        // https://stackoverflow.com/questions/237104/how-do-i-check-if-an-array-includes-a-value-in-javascript/25765186#25765186
-                        // hvis ID fra fromFile fins i CoremaOccurance file så..  
-                        splitFraArray = fraArray[i].split('\t')
-                        if (!!~item[indexOfId].indexOf(splitFraArray[0])) {
-                            tempResults = fraArray[i]
-                            tempResults = tempResults.split('\t')
-                            if(alreadyFound === 0){
-                                // If feltet er tomt bruk N/A i stedet
-                                a = (tempResults[2] ? tempResults[2] : 'N/A');
-                                b = (tempResults[3] ? tempResults[3] : 'N/A');
-                                c = (tempResults[4] ? tempResults[4] : 'N/A');
-                                a = a + ''
-                                b = b + ''
-                                c = c + ''
-                                // add this to the item
-                                // hvis vi ikke har noe der fra før
-                                alreadyFound = 1
-                                stopSeach = 1
-                                // multipleTreff = 1
-                            } else if (alreadyFound === 1) {
-                                //hvis vi allerede har lagt
-                                a = (tempResults[2] ? a + ' | ' + tempResults[2] : a + ' | ' + 'N/A');
-                                b = (tempResults[3] ? b + ' | ' + tempResults[3] : b + ' | ' + 'N/A');
-                                c = (tempResults[4] ? c + ' | ' + tempResults[4] : c + ' | ' + 'N/A');
-                                a = a + ''
-                                b = b + ''
-                                c = c + ''
-                                // multipleTreff++
-                            }  
-                            tempResults.length = 0;
-                        } else {
-                            alreadyFound = 0                           
-                        }
-                    }
-                }
-            }
-        }).on('close', function () {
-            console.log('Closing');
-            const OutFile = testPath + 'dust.txt'
-            const writeStream = fs.createWriteStream(OutFile);
-            const pathName = writeStream.path;
-            writeStream.write(`${tsvHeader}\n`)
-            writeStream.write(`${tsvItems}\n`)
-            writeStream.end()
-            
-            writeStream.on('finish', () => {
-                console.log(`wrote all the array data to file ${pathName}`);
-                tsvItems = ''
-                });
-        
-            // handle the errors on the write process
-            writeStream.on('error', (err) => {
-                console.error(`There is an error writing the file ${pathName} => ${err}`)
-            });
-
-            console.timeEnd("searchAddDatafromDifferntFiles");
-        })
-    } else {
-        throw new Error ('File not found ' + musitFile)
-    }
 }
 
 
@@ -739,48 +372,7 @@ const IdAndOrgIDsFile = async (OccurenceFile, outFile) => {
     })
 }
 
-const  trimCoremaOccurenceFile = async (OccurenceFile) => {
-return new Promise(function(resolve, reject) {
-    try {
-    let tsvItems = '';
-    console.log(chalk.green('1. starting:  trimCoremaOccurenceFile :' + OccurenceFile ));
-        const readInterface = readline.createInterface({
-            input: fs.createReadStream(OccurenceFile),
-            console: false
-        })
-        
-        let count = 0  
-        const coremaOcurrenceHeader = 'id' + '\t' + 'catalogNumber' + '\t' + 'organismID'+ '\t' + 'preparations'
-        // Les MUSIT fila linje for linje
-        readInterface.on('line', function(line) {
-            count++
-            if (count === 1) {
-                // header row 
-                Header = line.split('\t')
-                indexOfID = Header.indexOf('id')
-                indexOfcatalogNumber = Header.indexOf('catalogNumber')
-                indexOforganismID = Header.indexOf('organismID')
-                indexOfpreparations = Header.indexOf('preparations')          
 
-            } else {
-                item = line.split('\t')
-                let tsvItem = item[indexOfID] + '\t' + item[indexOfcatalogNumber] + '\t' + item[indexOforganismID] + '\t' + item[indexOfpreparations]
-                tsvItems =tsvItems + tsvItem + '\n'
-                item.length = 0
-            }
-
-        }).on('close', function  () {
-            const data = coremaOcurrenceHeader + '\n' + tsvItems + '\n'
-            fs.writeFileSync(coremaOccurenceOutFile, data)
-            console.log(chalk.blue('1. done:  trimCoremaOccurenceFile'));
-            tsvItems = ''
-            resolve(coremaOccurenceOutFile)
-        })
-    } catch (error) {
-        reject(new Error(error));
-    }
-})
-}
 
 // lager en fil med id (UUID) og MUSIT nummer
 const getRelationshipData = async (resourcerelationship) => {
@@ -858,99 +450,6 @@ return new Promise(function(resolve, reject) {
         reject(new Error(error)); 
     }
 })
-}
-
-
-const addCoremaData = (musitFile, urnPrefix) => {
-    let arrayOfContent = [];
-    let tsvItems = '';
-    let tsvHeader = '';
-    if (fs.existsSync(coremaFile)) {
-        // coremaFileContent = det som skal sorteres, 
-        let coremaFileContent = fs.readFileSync(coremaFile,'utf8');
-        arrayOfContent = coremaFileContent.split('\n')
-        coremaFileContent = '' // tøm variabel
-    } else {
-        throw new Error ('File not found ' + coremaFile)
-    }
-
-    if (fs.existsSync(musitFile)) {       
-        const writeStream = fs.createWriteStream(musitOutFile);
-        const pathName = writeStream.path;
-        
-        const readInterface = readline.createInterface({
-            input: fs.createReadStream(musitFile),
-            console: false
-        })
-
-        let count = 0  
-        // Les MUSIT fila linje for linje
-        readInterface.on('line', function(line) {
-        
-            count++
-            if (count === 1) {
-                // header row 
-                Header =  line.split('\t')
-                // legg til felt fr coremaUUID
-                Header.push('coremaUUID')
-                indexOfMusitNo = Header.indexOf('catalogNumber')
-                tsvHeader = Header.join('\t')
-
-            } else {
-                item = line.split('\t')
-                let MusitNo = urnPrefix + item[indexOfMusitNo]
-                // leter i resourcerelationship.txt etter MUSIT nummer og returnerer UUID
-                for (i = 0; i < arrayOfContent.length; i++) {
-                   if ( arrayOfContent[i].indexOf(MusitNo)> - 1) {
-                        tempResults = arrayOfContent[i]
-                        tempResults = tempResults.split('\t')
-                        console.log(i);
-                        // add this to the item 
-                        item.push(tempResults[0])
-                        // write the item to a new file
-                        tsvItem = item.join('\t')
-                        tsvItems =tsvItems + tsvItem + '\n'
-                        break; 
-                    }
-
-                }
-
-                // hvis vi fikk treff, så bruk UUID til å finne coremaNo
-                // if (tempResults) {
-                //    UUID = tempResults.split('\t')
-                //     console.log(UUID[0]);
-                //     for (i = 0; i < arrayOfContent.length; i++) {
-                //         if ((arrayOfContent[i].indexOf(UUID[0])> - 1) && (arrayOfContent[i].indexOf('urn:catalog:O:DP:O-DP-')> - 1)) {
-                //             results = results + arrayOfContent[i] + '\n';
-                //             break; 
-                //         }
-                //     }
-                // tempResults.length = 0 // tøm array
-                // UUID.length = 0
-                // }
-                
-            }
-        }).on('close', function () {
-            const resultsAndLine = {results, count }  
-            writeStream.write(`${tsvHeader}\n`)
-            writeStream.write(`${tsvItems}\n`)
-            writeStream.end()
-            writeStream.on('finish', () => {
-                console.log(`wrote all the array data to file ${pathName}`);
-                });
-        
-                // handle the errors on the write process
-            writeStream.on('error', (err) => {
-                console.error(`There is an error writing the file ${pathName} => ${err}`)
-            });
-
-            // console.log(results);
-            // console.log('Dette var resultatene');    
-            // callback(undefined, resultsAndLine)
-        })
-    } else {
-        throw new Error ('File not found ' + musitFile)
-    }
 }
 
 
@@ -1064,15 +563,14 @@ const addEventFileToOccuranceFile = async (occuranceFile, eventFile, outFile) =>
                         eventElement = eventArray[i];
                         eventItems = eventElement.split('\t')
                         if(occuranceItems[0] === eventItems[0]){
-                            thisElement = occuranceElement + '\t' + eventElement
-                            if(eventArray.length > 2){
+                            thisElement = occuranceElement + '\t' + eventElement                           
+                            totElements = totElements + thisElement + '\n' 
+                            thisElement = ''  
+                            if(eventArray.length < 2){
                                 eventArray.length = 0
                             } else {
                                 eventArray.splice(0,i) 
                             }
-                            
-                            totElements = totElements + thisElement + '\n' 
-                            thisElement = ''
                             break
                         } 
                         else if (occuranceItems[0] < eventItems[0] ) {
@@ -1103,115 +601,166 @@ const addEventFileToOccuranceFile = async (occuranceFile, eventFile, outFile) =>
 }
 
 
-// lager fra corema occurance et objekt med key:value, der key er orrguuid, trimmer også bort unødige felter
-const makeOccuranceFileObject = async (occuranceFile) => {
-return new Promise(function(resolve, reject) {
-    try {
-    console.log(chalk.green('5. starting:  makeOccuranceFileObject'));
-    let occuranceObjekt = {}
-    let occuranceData = ''
-    let occuranceArray = []
-    let valueItem = ''
-    let headerRow = []
-    let indexArray = []
-    let orgUuuidPos = ''
-    const outFile = testPath + 'OccuranceObject.txt'
-    // const indexArray = [0,8,9,15,17,24,25,26,27,28,29,30,31,34,35,3,40,44,45,46,47,48,49,50,51]
-    const titleArray = ["institutionCode","collectionCode","ownerInstitutionCode","basisOfRecord","informationWithheld","materialSampleID","occurrenceID","catalogNumber","recordNumber","recordedBy","sex","lifeStage","preparations","disposition","associatedMedia","organismID","eventDate","continent","waterBody","country","countryCode","stateProvince","county","locality","minimumElevationInMeters","maximumElevationInMeters","decimalLatitude","decimalLongitude","geodeticDatum","coordinateUncertaintyInMeters","coordinatePrecision","identifiedBy","dateIdentified","identificationQualifier","typeStatus","scientificNameID","scientificName","kingdom","class","order","family","genus","specificEpithet","infraspecificEpithet"]
-    const orgUUIDpos = 23 // organismUUID har posisjon 23 
-    if (fs.existsSync(occuranceFile)) {
-        occuranceData = fs.readFileSync(occuranceFile,'utf8');
-    } else {
-        console.log(chalk.red('File not found:' + occuranceFile ));
-        return
-    }
-    occuranceArray = occuranceData.split('\n')
-    headerRow = occuranceArray[0].split('\t')
-    // console.log(headerRow);
-    // finn posisjonen til hvert element i titleArray
-    titleArray.forEach(element => {
-        tempEl = element
-        for (let index = 0; index < headerRow.length; index++) {
-            if (tempEl === headerRow[index]) {
-                indexArray.push(index)
-                if(tempEl === 'organismID') {
-                    orgUuuidPos = index
-                }    
+const combineCoremaAndMusit = async (coremaCombineFile, MusitOccuranceFile, outFile, path) =>{
+    return new Promise(function(resolve, reject) {
+        try{
+            console.log(chalk.green('6. starting:  combineCoremaAndMusit'));
+
+            // make Musit dat into an array of Arrays
+            MusitOccuranceFile = path + MusitOccuranceFile
+            let  musitData =  fs.readFileSync(MusitOccuranceFile,'utf8')
+            musitData = musitData.split('\n')
+            const musitHeader = musitData[0].split('\t')
+            const indexOfcatalogNumber = musitHeader.indexOf('catalogNumber')
+            let musitDataArray = []
+            for (let j = 0; j < musitData.length; j++) {
+                musitDataArray.push(musitData[j].split('\t'))
             }
-        }
-    });
-    
-    // gjør hver linje av fila til et objekt key:organismUUID og value: er resten av linja
-    
-    for (let index = 0; index < occuranceArray.length; index++) {
-        const element = occuranceArray[index];
-        tempArray = element.split('\t')
-        const orgUUID =  tempArray[orgUuuidPos]
-        let valueItem = []
-            //https://stackoverflow.com/questions/33211799/filter-array-based-on-an-array-of-index
-            valueItem.push(indexArray.map((item) => tempArray[item]))
-        // assing to object on key:value per line
-        occuranceObjekt[orgUUID] = valueItem
-        
-        
-        
-    }
-    fs.writeFileSync(outFile, JSON.stringify(occuranceObjekt))
-    console.log(chalk.blue('5. finnished:  makeOccuranceFileObject'));
-    resolve(outFile)
-    } catch (error) {
-        reject(new Error(error));
-    }
-})
-}
+                 // Overskriftsraden puttes i en egen array
+                 const headerArray1 = musitDataArray.shift()
+                 // Fjern tomme felter i array
+                 musitDataArray = musitDataArray.filter(Boolean)
+                 // sorts lines alphabethic as string
+                 musitDataArray.sort(function(a, b) {
+                     return a[indexOfcatalogNumber] - b[indexOfcatalogNumber];
+                 });
+                 // add header to the top
+                //  musitDataArray.unshift(headerArray1)
+            
+            // make CoremaData into a array of arrays
+            coremaCombineFile = path + coremaCombineFile
+            let coremaData = fs.readFileSync(coremaCombineFile,'utf8')
+            coremaData = coremaData.split('\n')
+            const coreamHeader = coremaData[0].split('\t')
+            let dummyData = ''
+            for (let p = 0; p < coreamHeader.length; p++) {
+                dummyData = dummyData + '\t' + 'd'
+            }
+            const indexOfMusitNo = coreamHeader.indexOf('MusitNo')
+            let item = ''
+            let items = []
+            for (let index = 0; index < coremaData.length; index++) {
+                const element = coremaData[index];
+                item = element.split('\t')
+                items.push(item)
+            }
+            // fjerne urn:catalog:xxxx: fra musitnummer i coremafila
+            for (let n = 0; n < items.length; n++) {
+                let element = items[n][indexOfMusitNo];
+                if(element)
+                {
+                    let cleanNo = element.substring(element.lastIndexOf(':')+1)
+                    items[n].splice([indexOfMusitNo],1, cleanNo)
+                }
+            }
 
+            // splits CoremaData in to two arrays, 1. those itmes containing a MUSIT number and 2. those Itmes that does not
+            let arrayWithMusitNo = []
+            let arrayWithOutMusitNo = []
+            for (let i = 0; i < items.length; i++) {
+                const element = items[i];
 
-// megre 2 object that have the same key
-// https://stackoverflow.com/questions/33850412/merge-javascript-objects-in-array-with-same-key
-const mergeObj = async (tilFil, fraFil, outFile) => {
-return new Promise(function(resolve, reject) {
-    try {
-        let obj1 = JSON.parse(fs.readFileSync(tilFil,'utf8'))
-        let obj2 = JSON.parse(fs.readFileSync(fraFil,'utf8'))
-       
-        console.log(chalk.green('6. starting:  mergeObj'));
-            for(key in obj1){
+                if(element[indexOfMusitNo]){
+                    arrayWithMusitNo.push(items[i])
+                } else {
+                    arrayWithOutMusitNo.push(items[i]) 
+                }
                 
-               if(obj2[key]){
-                  console.log(obj2[key]);
-                  obj1[key] = obj1[key] + ',' + obj2[key];
-                  console.log(obj1[key]);
-               };
-            };
-            fs.writeFileSync(outFile, JSON.stringify(obj1))
-            console.log(chalk.blue('6. finnished:  mergeObj'));
-            resolve(outFile) 
-    } catch (error) {
-        reject(new Error(error));
-    }
-})
+            }
+                let totData = ''
+                let totItem = ''
+            // sort array
+                // Overskriftsraden puttes i en egen array
+            const headerArray = arrayWithMusitNo.shift()
+            // Fjern tomme felter i array
+            items = arrayWithMusitNo.filter(Boolean)
+            // sorts lines alphabethic as string
+            arrayWithMusitNo.sort(function(a, b) {
+                return a[indexOfMusitNo] - b[indexOfMusitNo];
+            });
+            // add header to the top
+            // arrayWithMusitNo.unshift(headerArray)
+
+            const writeStream = fs.createWriteStream(outFile);
+            const pathName = writeStream.path;
+            const totHeader = musitHeader.join('\t') + '\t' + coreamHeader.join('\t') + '\n'
+            writeStream.write(totHeader)
+            // combine Corema with MUSIT
+            for (let k = 0; k < musitDataArray.length; k++) {
+                for (let l = 0; l < arrayWithMusitNo.length; l++) {
+                    if (arrayWithMusitNo[l][indexOfMusitNo] === musitDataArray[k][indexOfcatalogNumber]){
+                        // console.log(chalk.yellowBright('yes'));
+                        // console.log(arrayWithMusitNo[l][indexOfMusitNo] + ' = ' + musitDataArray[k][indexOfcatalogNumber]);
+                        totItem = musitDataArray[k].join('\t') + '\t' + arrayWithMusitNo[l].join('\t')
+                        totData = totData + '\n' + totItem
+                        writeStream.write(totData)
+                        totData = ''
+                        totItem = ''
+                        arrayWithMusitNo.splice(0,l)
+                        break
+                    } else {
+                        if(musitDataArray[k]){
+                            totItem = musitDataArray[k].join('\t') + '\t' + dummyData
+                            totData = totData + '\n' + totItem 
+                            writeStream.write(totData)
+                            totData = ''
+                            totItem = ''
+                            break
+                        }
+                    }   
+                }
+            }
+            // add items from Corema File that is not in MUSIT file
+           
+            for ( let r = 0; r < (arrayWithOutMusitNo.length - 1); r++) {
+                if(arrayWithOutMusitNo[r]) {
+                totData = '\n' + arrayWithOutMusitNo[r].join('\t')
+                writeStream.write(totData)
+                totData = ''  
+                }
+            }
+            writeStream.write(totData)
+
+            writeStream.end()
+            writeStream.on('finish', () => {
+                console.log(`wrote all the array data to file ${pathName}`);
+                console.log(chalk.blue('6. finnished:  combineCoremaAndMusit'));
+                resolve(outFile) 
+                });
+            // handle the errors on the write process
+            writeStream.on('error', (err) => {
+                console.error(`There is an error writing the file ${pathName} => ${err}`)
+            });
+
+        } catch (error) {
+            reject(new Error(error));
+        }
+    })
 }
-
-
 
 
 const main = async () =>  {
+    console.time('Main')
     try { 
+        // prepare filse by deleting and add columns
+        await prepareCoremaOccunaceFile( OccurenceFile , 'src/data/test/coremaOccurance.txt')
+
+
+/*
         // add orgUUID to all the eventfiles in corema
         let fileName = ''
         let filB = ''
+        let testFile = ''
         const fil0 = await IdAndOrgIDsFile(OccurenceFile, 'src/data/test/IdAndOrgId.txt')
         const filA = await makeOccuranceFileArray(OccurenceFile,  'src/data/test/OrgUUIDCoremaFile.txt')
 
-        console.log('fil0: ' +  fil0);
-        console.log('filA: ' +  filA);
-        
+
         // legg tl MUSIT nummer til Coerma fila
         const fil4 = await getRelationshipData(resourcerelationship)
         console.log('fil4: ' +  fil4);
         fileName = await addOrgIdtoMusitFiles(fil0,'coremaStichFile', 'src/data/test/orgUUIDMusit.txt')
         console.log('Eventfil: ' +  fileName);
-        filB = await addEventFileToOccuranceFile(filA, fileName, 'src/data/test/occuranceAndMusitNombers.txt')
+        testFile = await addEventFileToOccuranceFile(filA, fileName, 'src/data/test/occuranceAndMusitNombers.txt')
 
 
         //slå sammen Corema Occurance fil med Eventfiler
@@ -1219,17 +768,22 @@ const main = async () =>  {
             fileName = await addOrgIdtoEventFiles(fil0,fileList[0].coremaFiles[i], 'src/data/test/orgUUID' + fileList[0].coremaFiles[i] + '.txt')
             console.log('Eventfil: ' +  fileName);
             filB = await addEventFileToOccuranceFile(filA, fileName, 'src/data/test/occuranceAndEvent' + fileList[0].coremaFiles[i] + '.txt')
+            // filB = await addEventFileToOccuranceFile(filA, fileName, filB)
             console.log('filB: ' +  filB);
         }
 
+        //combine CoremaCombinedFile with Musit OccuranceFile
+        const fileC = await combineCoremaAndMusit(testFile,'src/data/test/karplanter_occurrence.txt', 'src/data/test/totFile.txt', '' )
         
 
         console.log('fil0: ' +  fil0);
         console.log('filA: ' +  filA);
         console.log('fil4: ' +  fil4);
+        console.log('testFile: ' + testFile);
+        console.log('fileC: ' +  fileC);
 
 
-
+*/
 
         // const fil1 = await trimCoremaOccurenceFile(OccurenceFile)
         // const fil2 = await mergeOccurencesPosts(fil1)
@@ -1256,8 +810,9 @@ const main = async () =>  {
 
     } catch (error) {
         console.log('her kommer en feil: ');
-        console.log(error);
+        console.error(error.name + ': ' + error.message);
     }
+    console.timeEnd('Main')
 }
 
 

@@ -5,6 +5,7 @@ const fs = require('fs')
 const fileListNhm = require('./utils/fileList')
 const fileListTmu = require('./utils/fileListTmu')
 const fileListUm = require('./utils/fileListUm')
+const fileListNbh = require('./utils/fileListNbh')
 const AbortController = require('abort-controller')
 const util = require('util')
 const AdmZip = require('adm-zip');
@@ -17,7 +18,7 @@ const mkdirp = require('mkdirp')
 console.log('Starting download....');
 // makingsure that renamed folder exist, if not create it
 const makeFolders = ()=> {
-  const museum = ['nhm','tmu','um']
+  const museum = ['nhm','tmu','um', 'nbh']
   let made = mkdirp.sync('./src/data//renamed')
   for (let index = 0; index < museum.length; index++) {
     made = mkdirp.sync('./src/data//renamed/' + museum[index])
@@ -105,11 +106,18 @@ async function download (samlinger, callback) {
 
 
 async function getFilesAllMuseum() {
+  try {
+    
+  
   makeFolders()
   await download(fileListUm)
   await download(fileListTmu)
+  await download(fileListNbh)
   await download(fileListNhm)
   process.exit() // hvis alle filer er downloaded og unzipped så slå av programmet
+} catch (error) {
+ console.log(error);   
+}
 }
 
 getFilesAllMuseum()

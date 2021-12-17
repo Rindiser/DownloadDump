@@ -12,11 +12,14 @@
     "sort": "nodemon --max-old-space-size=8096 src/utils/sortCoremaFiles.js -e js",
     "add": "nodemon --max-old-space-size=8096 src/utils/addCoremaToMUSIT.js -e js",
     "id": "nodemon --max-old-space-size=8096 src/utils/personID.js -e js",
-    "adb": "nodemon --max-old-space-size=8096 src/utils/adbAPI.js -e js"
+    "adb": "nodemon --max-old-space-size=8096 src/utils/adbAPI.js -e js",
+    "GBiF": "nodemon --max-old-space-size=8096 src/utils/getMetricsFromGBiF.js -e js",
+    "cc": "nodemon --max-old-space-size=8096 src/utils/checkCoords/checkCoords.js -e js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@turf/turf": "^6.5.0",
     "abort-controller": "^3.0.0",
     "adm-zip": "^0.5.5",
     "chalk": "^4.1.0",
