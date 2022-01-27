@@ -76,6 +76,15 @@
 },
 {
     "source": "corema",
+    "orgGroup": "zoologi",
+    "name": "fisk",
+    "zipFileName": "occurrence",
+    "mediaFile": "_multimedia",
+    "url": "https://ipt.gbif.no/archive.do?r=o_fish",
+    "akronym": "ZMO-Pisc"
+},
+{
+    "source": "corema",
     "name": "dna_entomologi",
     "zipFileName": "occurrence",
     "mediaFile": "_multimedia",

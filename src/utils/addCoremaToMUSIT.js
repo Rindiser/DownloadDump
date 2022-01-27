@@ -785,17 +785,17 @@ const main = async () =>  {
 
 */
 
-        // const fil1 = await trimCoremaOccurenceFile(OccurenceFile)
-        // const fil2 = await mergeOccurencesPosts(fil1)
-        // await sortCoremaOut(fil2)
-        // const fil4 = await getRelationshipData(resourcerelationship)
-        // const fil4c = await makeOrgUUIDandMusitNoObject(fil4, 'src/data/test/OrgUUIDandMusitNoObject.txt')
-        // const fil5 = await makeOrganimsUUIDobjekt(fil2, fileList[0].coremaFiles[5])
-        // const fil5b = await addOrgamismUUIDtoFile(fil5, fil2)
-        // const fil6 = await makeOccuranceFileObject('src/data/test/occurrence.txt')
+        const fil1 = await trimCoremaOccurenceFile(OccurenceFile)
+        const fil2 = await mergeOccurencesPosts(fil1)
+        await sortCoremaOut(fil2)
+        const fil4 = await getRelationshipData(resourcerelationship)
+        const fil4c = await makeOrgUUIDandMusitNoObject(fil4, 'src/data/test/OrgUUIDandMusitNoObject.txt')
+        const fil5 = await makeOrganimsUUIDobjekt(fil2, fileList[0].coremaFiles[5])
+        const fil5b = await addOrgamismUUIDtoFile(fil5, fil2)
+        const fil6 = await makeOccuranceFileObject('src/data/test/occurrence.txt')
  
-        // const fil7 = await mergeObj(fil6,fil5, 'src/data/test/mergedObjects.txt' )
-        // const fil8 = await makeMusitNoKeyedObject(fil7,fil4c,'src/data/test/coremaReadyObject.txt' )
+        const fil7 = await mergeObj(fil6,fil5, 'src/data/test/mergedObjects.txt' )
+        const fil8 = await makeMusitNoKeyedObject(fil7,fil4c,'src/data/test/coremaReadyObject.txt' )
 
 
         // console.log('fil1: ' +  fil1);

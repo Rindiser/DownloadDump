@@ -7,14 +7,15 @@
     "start": "node src/app.js",
     "fe": "nodemon src/fetchApp.js -e js",
     "st": "nodemon src/utils/produceStats.js -e js",
-    "dc": "nodemon --max-old-space-size=4096 src/utils/trimFiles.js -e js",
+    "dc": "nodemon --max-old-space-size=8096 src/utils/trimFiles.js -e js",
     "stm": "nodemon --max-old-space-size=8096 src/utils/GM_stitchFiles_musit.js -e js",
     "sort": "nodemon --max-old-space-size=8096 src/utils/sortCoremaFiles.js -e js",
     "add": "nodemon --max-old-space-size=8096 src/utils/addCoremaToMUSIT.js -e js",
     "id": "nodemon --max-old-space-size=8096 src/utils/personID.js -e js",
     "adb": "nodemon --max-old-space-size=8096 src/utils/adbAPI.js -e js",
     "GBiF": "nodemon --max-old-space-size=8096 src/utils/getMetricsFromGBiF.js -e js",
-    "cc": "nodemon --max-old-space-size=8096 src/utils/checkCoords/checkCoords.js -e js"
+    "cc": "nodemon --max-old-space-size=8096 src/utils/checkCoords/checkCoords.js -e js",
+    "nk": "nodemon --max-old-space-size=8096 src/utils/musitGeo/kommuneRegister.js -e js"
   },
   "author": "",
   "license": "ISC",

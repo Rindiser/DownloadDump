@@ -1,6 +1,9 @@
 const fs = require('fs')
 const chalk = require('chalk');
-const fileList = require('./fileList')
+const fileListNhm = require('./fileList')
+const fileListTmu = require('./fileListTmu')
+const fileListUm = require('./fileListUm')
+const fileListNbh = require('./fileListNbh')
 const Papa = require('papaparse')
 const clone = require('clone');
 const { convertArrayToCSV } = require('convert-array-to-csv');
@@ -52,8 +55,8 @@ async function addImageName (slimArrayy, mediaFileName, source) {
     let wasFound = false
     let startpunkt = 1 // en variabel som brukes for å slippe å starte på begynnelsen av mediafila for hvert søk, 
                         // nå fortsetter vi bare der vi slapp
-    let mediaCollection = [] // i Tilfelle en post har flere bilder, legges de i dette objektet som legges til slimArray
-
+    // let mediaCollection = [] // i Tilfelle en post har flere bilder, legges de i dette objektet som legges til slimArray
+    let mediaCollection = ''
     for (let j = 1, len = slimArrayy.length; j < len; ++j) { 
         // console.log(startpunkt + ' og j: ' + j);
         
@@ -63,15 +66,22 @@ async function addImageName (slimArrayy, mediaFileName, source) {
             
             // console.log(mediaArray[i][0] + ' = ' + slimArrayy[j][0] + ' og i = ' + i);
             // hvis det er flere bilder av en post, lag en array av linkene
-                mediaCollection.push(mediaArray[i][1])
+                // mediaCollection.push(mediaArray[i][1])
+                if(!mediaCollection) {
+                    mediaCollection = mediaArray[i][1]
+                } else {
+                    mediaCollection = mediaCollection + ' | ' + mediaArray[i][1]
+                }
+                
                 wasFound = true
             
             } else if (wasFound) {
                 
                 slimArrayy[j].push(mediaCollection)
                 // console.log(slimArrayy[j]);
-                mediaCollection = clone(mediaCollection)
-                mediaCollection.length = 0
+                // mediaCollection = clone(mediaCollection)
+                // mediaCollection.length = 0
+                mediaCollection = ''
                 wasFound = false
                 startpunkt = i
                 break
@@ -126,11 +136,18 @@ async function deleteColumns(fileWithPath, mediaFileName, source, name, outfileN
         slimArrayy.push(indexArray.map((item) => parseFile.data[i][item]))   
     }
     // Add image File name from media file
-    slimArrayy = await addImageName(slimArrayy, mediaFileName, source)
+    if (source === 'corema'){
+        try {
+            slimArrayy = await addImageName(slimArrayy, mediaFileName, source)
+        } catch (error) {
+            console.log('media not found');
+        }
+    }
     indexArray.length = 0
+
     const header = headerFields;
     let csvFromArrayOfArrays = convertArrayToCSV(slimArrayy, {
-        header,
+        // header,
         separator: '\t'
       });
     slimArrayy.length = 0 // tøm array for å reducere minnebruk
@@ -141,14 +158,27 @@ async function deleteColumns(fileWithPath, mediaFileName, source, name, outfileN
 }
 
 
-async function fixFile  () {
+async function fixFile  (museum, fileList) {
     for (i = 1, len = fileList.length; i < len; i++) {
         // for (i = 1, len = fileList.length; i < 3; i++)  {
-        let fileWithPath = "./src/data/renamed/" + fileList[i].name + '_occurrence.txt'
-        let mediaFileName = "./src/data/renamed/" + fileList[i].name + '_media.txt'
+        let fileWithPath = "./src/data/renamed/" + museum + '/' + fileList[i].name + '_occurrence.txt'
         let source = fileList[i].source
-        let fileName = "./src/data/renamed/" + fileList[i].name + '_occurrence.txt'
+        let fileName = "./src/data/renamed/" + museum + '/' + fileList[i].name + '_occurrence.txt'
+        let mediaFileName = "./src/data/renamed/" + museum + '/' + fileList[i].name + '_multimedia.txt'
         await deleteColumns(fileWithPath, mediaFileName, source, fileList[i].name, fileName)
     }
 }
-fixFile()
+
+async function trimFilesAllMuseum() {
+    try {
+    await fixFile('um', fileListUm)
+    await fixFile('tmu', fileListTmu)
+    await fixFile('nbh', fileListNbh)
+    await fixFile('nhm', fileListNhm)
+    process.exit() // hvis alle filer er downloaded og unzipped så slå av programmet
+    } catch (error) {
+    console.log(error);   
+    }
+  }
+  
+  trimFilesAllMuseum()

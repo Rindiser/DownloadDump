@@ -107,8 +107,6 @@ async function download (samlinger, callback) {
 
 async function getFilesAllMuseum() {
   try {
-    
-  
   makeFolders()
   await download(fileListUm)
   await download(fileListTmu)
