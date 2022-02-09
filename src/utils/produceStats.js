@@ -139,31 +139,31 @@ const transformObject = (obj, name) => {
 // summere opp samlingsstørrelsen på tvers av samlinger på år
 // input year, variabelen der samlingsstørrelsen for en samling er lagret
 //output akkumulativYear en array av objekter med samlingstørrelse per år [{year:1850, number:1233}, {year:1851, number: 1255}]
-// const calcAkkumulativtYear = (year) => {
-//     year.sort((a, b) => (b.year < a.year) ? 1 : (a.year === b.year) ? ((a.number - b.number) ? 1 : -1) : -1 )
-//     // akkumulativ samlingsstørrelse
-//     let element = 0
-//     let lengthTest = "" // for å test om årstallet har 4 nummer, eller blir det problemer
-//     for (let i = 0; i < year.length; i++) {
-//         lengthTest = ' ' + year[i].year
-//         if (isNaN(year[i].number) ) {
-//             console.log('nei');
-//         }
-//         else if (lengthTest.length <= 4) {
-//             console.log(year[i].year);
-//         } else if (year[i].year > 2021 || year[i].year < 1500) {
-//             console.log(year[i].year);
-//         } else {
-//         element += year[i].number;
-//         akkumulativYear[i] = {
-//             year: year[i].year,
-//             number: element
-//             }    
-//         }
-//     }
-//     akkumulativYear.sort((a, b) => (b.akkumulativYear < a.akkumulativYear) ? 1 : (a.akkumulativYear === b.akkumulativYear) ? ((a.number - b.number) ? 1 : -1) : -1 )
-//     return akkumulativYear
-// }
+const calcAkkumulativtYear = (year) => {
+    year.sort((a, b) => (b.year < a.year) ? 1 : (a.year === b.year) ? ((a.number - b.number) ? 1 : -1) : -1 )
+    // akkumulativ samlingsstørrelse
+    let element = 0
+    let lengthTest = "" // for å test om årstallet har 4 nummer, eller blir det problemer
+    for (let i = 0; i < year.length; i++) {
+        lengthTest = ' ' + year[i].year
+        if (isNaN(year[i].number) ) {
+            console.log('nei');
+        }
+        else if (lengthTest.length <= 4) {
+            console.log(year[i].year);
+        } else if (year[i].year > 2021 || year[i].year < 1500) {
+            console.log(year[i].year);
+        } else {
+        element += year[i].number;
+        akkumulativYear[i] = {
+            year: year[i].year,
+            number: element
+            }    
+        }
+    }
+    akkumulativYear.sort((a, b) => (b.akkumulativYear < a.akkumulativYear) ? 1 : (a.akkumulativYear === b.akkumulativYear) ? ((a.number - b.number) ? 1 : -1) : -1 )
+    return akkumulativYear
+}
 // Vi tar arrayen Years og legger sammen alle årene så vi får akkumulativ størrelse
 // Denne trenger bare kjøre 1 gang etter at alle samlingene er gjennomgått, eller kjøres etter hver samling og skrive over
 const addYearsAkkumulativt = (year) => {
@@ -309,7 +309,7 @@ async function processLineByLine(fileWithPath, currentColl, collList) {
         country = transformObject(country, 'country')
         year = transformObject(year, 'year')
         // regn ut samlingsstørrelse på år for currentCollection
-        // akkumulativYear = calcAkkumulativtYear(year)
+        akkumulativYear = calcAkkumulativtYear(year)
         recordedBy = transformObject(recordedBy, 'recordedBy')
         order = transformObject(order, 'order')
         family = transformObject(family, 'family')
