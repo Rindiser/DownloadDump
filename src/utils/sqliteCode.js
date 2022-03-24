@@ -550,34 +550,34 @@ async function runCoremaStitch(collection, coremaFolder, outfile) {
     //     } 
     // }
     // 1. delete data from tables in a sqlite-database (one per organismgroup), and fill tables again from musit- and coremadumpfiles
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/amplification.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/amplification.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
     
-    await deleteFromTable(db,'amplification')
-    await deleteFromTable(db,'materialsample')
-    await deleteFromTable(db,'multimedia')
-    await deleteFromTable(db,'permit')
-    await deleteFromTable(db,'preparation')
-    await deleteFromTable(db,'preservation')
-    await deleteFromTable(db,'resourcerelationship')
-    await deleteFromTable(db,'simpledwc')
+    // await deleteFromTable(db,'amplification')
+    // await deleteFromTable(db,'materialsample')
+    // await deleteFromTable(db,'multimedia')
+    // await deleteFromTable(db,'permit')
+    // await deleteFromTable(db,'preparation')
+    // await deleteFromTable(db,'preservation')
+    // await deleteFromTable(db,'resourcerelationship')
+    // await deleteFromTable(db,'simpledwc')
 
-    db.run("BEGIN TRANSACTION");
-    await fillTable(db,'amplification',`${pathToCoremaDumps}${coremaFolder}/amplification.txt`)
-    await fillTable(db,'materialsample',`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
-    await fillTable(db,'multimedia',`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
-    await fillTable(db,'permit',`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
-    await fillTable(db,'preparation',`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
-    await fillTable(db,'preservation',`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
-    await fillTable(db,'resourcerelationship',`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
-    await fillTable(db,'simpledwc',`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
-    db.run("COMMIT");
+    // db.run("BEGIN TRANSACTION");
+    // await fillTable(db,'amplification',`${pathToCoremaDumps}${coremaFolder}/amplification.txt`)
+    // await fillTable(db,'materialsample',`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
+    // await fillTable(db,'multimedia',`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
+    // await fillTable(db,'permit',`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
+    // await fillTable(db,'preparation',`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
+    // await fillTable(db,'preservation',`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
+    // await fillTable(db,'resourcerelationship',`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
+    // await fillTable(db,'simpledwc',`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
+    // db.run("COMMIT");
 
     const start = coremaFolder.length + 2
     console.log(start)
@@ -702,41 +702,41 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     // }
     // 
     // // 1. delete data from tables in a sqlite-database (one per organismgroup), and fill tables again from musit- and coremadumpfiles
-    await changeEncoding(`${pathToMusitDumps}${musitFile}/${musitFile}.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/amplification.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
-    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
+    // await changeEncoding(`${pathToMusitDumps}${musitFile}/${musitFile}.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/amplification.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
+    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
     
-        //delete data from database
-    await deleteFromTable(db, `${musitFile}`)
-    await deleteFromTable(db, 'amplification')
-    await deleteFromTable(db, 'materialsample')
-    await deleteFromTable(db, 'permit')
-    await deleteFromTable(db, 'multimedia')
-    await deleteFromTable(db, 'preparation')
-    await deleteFromTable(db, 'preservation')
-    await deleteFromTable(db, 'simpledwc')
-    await deleteFromTable(db, 'resourcerelationship')
+    //     //delete data from database
+    // await deleteFromTable(db, `${musitFile}`)
+    // await deleteFromTable(db, 'amplification')
+    // await deleteFromTable(db, 'materialsample')
+    // await deleteFromTable(db, 'permit')
+    // await deleteFromTable(db, 'multimedia')
+    // await deleteFromTable(db, 'preparation')
+    // await deleteFromTable(db, 'preservation')
+    // await deleteFromTable(db, 'simpledwc')
+    // await deleteFromTable(db, 'resourcerelationship')
 
-    // fill tables
-    db.run("BEGIN TRANSACTION");
-    await fillTable(db, `${musitFile}`,`${pathToMusitDumps}${musitFile}/${musitFile}.txt`)
-    await fillTable(db, 'amplification',`${pathToCoremaDumps}${coremaFolder}/amplification.txt` )
-    await fillTable(db,'materialsample',`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
-    await fillTable(db,'multimedia',`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
-    await fillTable(db,'permit',`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
-    await fillTable(db,'preparation',`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
-    await fillTable(db,'preservation',`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
-    await fillTable(db,'resourcerelationship',`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
-    await fillTable(db,'simpledwc',`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
-    db.run("COMMIT");
+    // // fill tables
+    // db.run("BEGIN TRANSACTION");
+    // await fillTable(db, `${musitFile}`,`${pathToMusitDumps}${musitFile}/${musitFile}.txt`)
+    // await fillTable(db, 'amplification',`${pathToCoremaDumps}${coremaFolder}/amplification.txt` )
+    // await fillTable(db,'materialsample',`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
+    // await fillTable(db,'multimedia',`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
+    // await fillTable(db,'permit',`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
+    // await fillTable(db,'preparation',`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
+    // await fillTable(db,'preservation',`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
+    // await fillTable(db,'resourcerelationship',`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
+    // await fillTable(db,'simpledwc',`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
+    // db.run("COMMIT");
     
-    let samling = fileList.find(el => el.zipFileName == musitFile)
+    let samling = fileList.find(el => el.zipFileName === musitFile)
     let prefix = samling.urn
     console.log(prefix)
     const length = prefix.length
@@ -793,15 +793,15 @@ async function main () {
     //   await runCoremaStitch('DNA_other','NHMO-DOT','DNA_other_stitched.txt')
     
     // // ///// from musit's point of view; all musits data, add from corema
-     await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit')
+    // await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit')
     // await runMusitCoremaStitch('lichens','lichens_o','O-DFL', 'lichens_stitched.txt','musit')
     // await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','musit')
     // await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt','musit')
 
     // /////// from coremas point of fiew; all corema data, add from musit
-    // await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema')
-    // await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','corema')
-    // await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema')
+    await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema')
+    await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','corema')
+    await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema')
 }
 
 main()

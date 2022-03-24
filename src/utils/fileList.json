@@ -25,24 +25,27 @@
 },
 {
     "source": "musit",
-    "name": "karplanter",
+    "name": "vascular",
     "zipFileName": "vascular_o",
     "mediaFile": "_media",
-    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/vascular_o.zip"
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/vascular_o.zip",
+    "urn": "O:V"
 },
 {
     "source": "musit",
     "name": "entomologi",
     "zipFileName": "entomology_nhmo",
     "mediaFile": "_media",
-    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/entomology_nhmo.zip"
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/entomology_nhmo.zip",
+    "urn": "NHMO:ENT"
 },
 {
     "source": "musit",
     "name": "lav",
     "zipFileName": "lichens_o",
     "mediaFile": "_media",
-    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/lichens_o.zip"
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/lichens_o.zip",
+    "urn": "O:L"
 },
 {
     "source": "musit",
@@ -56,7 +59,8 @@
     "name": "sopp",
     "zipFileName": "fungus_o",
     "mediaFile": "_media",
-    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/fungus_o.zip"
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/fungus_o.zip",
+    "urn": "O:F"
 },
 {
     "source": "corema",
@@ -85,7 +89,7 @@
 },
 {
     "source": "corema",
-    "name": "dna_entomologi",
+    "name": "dna_entomology",
     "zipFileName": "occurrence",
     "mediaFile": "_multimedia",
     "url": "https://ipt.gbif.no/archive.do?r=o_dna_arthropods",
@@ -109,7 +113,7 @@
 },
 {
     "source": "corema",
-    "name": "dna_karplanter",
+    "name": "dna_vascular",
     "zipFileName": "occurrence",
     "mediaFile": "_multimedia",
     "url": "https://ipt.gbif.no/archive.do?r=o_dna_plants",
