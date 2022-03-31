@@ -17,6 +17,7 @@ const papa = require('papaparse')
 const fileList = require('./fileList')
 const csvParser = require('csv-parser')
 const languageEncoding = require('detect-file-encoding-and-language')
+const { join } = require('path')
 
  const pathToCoremaDumps = './../../../coremaDumps/'
  const pathToMusitDumps = './../../../musitDumps/'
@@ -25,8 +26,14 @@ const pathToDatabases = './../../../sqliteDatabases/'
 
 // 2. create view combining musit-table and relatedresourceID in corema, to be able to match between them
 // create sqlite-view to combine musitdata and id from corema so that connection can be made between corema and musit
-const createViewMusitRel = (musitFile) => { 
+const createViewMusitRel = (musitFile,double) => { 
     console.log('createViewMusitRel')
+    let joinClause 
+    if (double === 'no') {
+        joinClause = `resourcerelationship.cleanCatalogNumberRecRel = ${musitFile}.catalogNumber`
+    } else {
+        joinClause = `resourcerelationship.cleanCatalogNumberRecRel = 'O:' || ${musitFile}.collectionCode || ':' || ${musitFile}.catalogNumber`
+    }
     return (
     `CREATE VIEW musitRel AS
                 SELECT 
@@ -71,49 +78,54 @@ const createViewMusitRel = (musitFile) => {
         resourcerelationship.coreid
         
         FROM ${musitFile}
-        LEFT JOIN resourcerelationship on resourcerelationship.cleanCatalogNumberRecRel = ${musitFile}.catalogNumber`)
+        LEFT JOIN resourcerelationship on ${joinClause}`)
 }
 
 // 3. create view combining all corema-tables
 // create sqlite-view combining all corema-dump files (darwin core archive files)
-const createViewCoremaFields = `CREATE VIEW coremaFields AS
-SELECT simpledwc.occurrenceID AS itemID, organismID, simpledwc.institutionCode, simpledwc.collectionCode, simpledwc.catalogNumber AS fullCatalogNumber, simpledwc.cleanCatalogNumber AS catalogNumber, rightsHolder, informationWithheld, simpledwc.preparations, simpledwc.basisOfRecord,
-materialSampleType, 
-preservationType,
-preparationType, preparationMaterials, preparedBy, preparationDate,
-geneticAccessionNumber, BOLDProcessID,
-concentration, concentrationUnit,
+const createViewCoremaFields = (double) => {
+    const viewCoremaFields = `CREATE VIEW coremaFields AS
+    SELECT simpledwc.occurrenceID AS itemID, organismID, simpledwc.institutionCode, simpledwc.collectionCode, simpledwc.catalogNumber AS fullCatalogNumber, simpledwc.cleanCatalogNumber AS catalogNumber, rightsHolder, informationWithheld, simpledwc.preparations, simpledwc.basisOfRecord,
+    materialSampleType, 
+    preservationType,
+    preparationType, preparationMaterials, preparedBy, preparationDate,
+    geneticAccessionNumber, BOLDProcessID,
+    concentration, concentrationUnit,
 
-simpledwc.recordNumber,
-simpledwc.recordedBy,
-simpledwc.eventDate,
-simpledwc.country,
-simpledwc.stateProvince,
-simpledwc.county,
-simpledwc.locality,
-simpledwc.minimumElevationInMeters,
-simpledwc.decimalLatitude,
-simpledwc.decimalLongitude,
-simpledwc.identificationQualifier,
-simpledwc.typeStatus,
-simpledwc.identifiedBy,
-simpledwc.scientificName,
-simpledwc."order",
-simpledwc.family,
-simpledwc.genus,
-simpledwc.specificEpithet,
-simpledwc.infraspecificEpithet,
-simpledwc.scientificNameAuthorship,
-resourcerelationship.relatedResourceID
+    simpledwc.recordNumber,
+    simpledwc.recordedBy,
+    simpledwc.eventDate,
+    simpledwc.country,
+    simpledwc.stateProvince,
+    simpledwc.county,
+    simpledwc.locality,
+    simpledwc.minimumElevationInMeters,
+    simpledwc.decimalLatitude,
+    simpledwc.decimalLongitude,
+    simpledwc.identificationQualifier,
+    simpledwc.typeStatus,
+    simpledwc.identifiedBy,
+    simpledwc.scientificName,
+    simpledwc."order",
+    simpledwc.family,
+    simpledwc.genus,
+    simpledwc.specificEpithet,
+    simpledwc.infraspecificEpithet,
+    simpledwc.scientificNameAuthorship,
+    resourcerelationship.relatedResourceID
 
-FROM simpledwc
-LEFT JOIN preservation on simpledwc.occurrenceID = preservation.coreid
-LEFT JOIN preparation on simpledwc.occurrenceID = preparation.coreid
-LEFT JOIN amplification on simpledwc.occurrenceID = amplification.coreid
-LEFT JOIN materialsample on simpledwc.occurrenceID = materialsample.coreid
-LEFT JOIN resourcerelationship on simpledwc.occurrenceID = resourcerelationship.coreid
-`
-
+    FROM simpledwc
+    LEFT JOIN preservation on simpledwc.occurrenceID = preservation.coreid
+    LEFT JOIN preparation on simpledwc.occurrenceID = preparation.coreid
+    LEFT JOIN amplification on simpledwc.occurrenceID = amplification.coreid
+    LEFT JOIN materialsample on simpledwc.occurrenceID = materialsample.coreid
+    LEFT JOIN resourcerelationship on simpledwc.occurrenceID = resourcerelationship.coreid
+    `
+    if (double === "no") {return viewCoremaFields}
+    else {
+        return viewCoremaFields 
+    }
+}
 // 4. select data from tables or views, from corema or both databases, give new column-names if desirable
 // sqlite-select musitdata adding coremadata
 const musitSelect = `SELECT 
@@ -156,7 +168,7 @@ musitRel.CreativeCommonsLicense,
 musitRel.ArtObsID,
 musitRel.relatedResourceID,
 musitRel.coreid,
-coremaFields.itemID, organismID, coremaFields.fullCatalogNumber AS RelCatNo, rightsHolder, coremaFields.basisOfRecord AS coremaBasisOfRecord, informationWithheld, coremaFields.preparations, coremaFields.materialSampleType,
+coremaFields.itemID, organismID, coremaFields.fullCatalogNumber AS RelCatNo, coremaFields.catalogNumber AS RelCleanCatNo, rightsHolder, coremaFields.basisOfRecord AS coremaBasisOfRecord, informationWithheld, coremaFields.preparations, coremaFields.materialSampleType,
 
 preservationType,
 preparationType, preparationMaterials, preparedBy, preparationDate,
@@ -202,6 +214,7 @@ materialSampleType,concentration, concentrationUnit,
 coremaFields.relatedResourceID,
 
 musitRel.basisOfRecord AS musitBasisOfRecord,
+musitRel.collectionCode AS musitCollectionCode,
 musitRel.catalogNumber AS RelCatNo
 
 FROM coremaFields
@@ -210,7 +223,7 @@ ORDER BY organismID ASC`
 
 // sqlite-seelct coremadata where there no musitdata
 const coremaSelect = `SELECT 
-simpledwc.occurrenceID as itemID, organismID, institutionCode, collectionCode, catalogNumber AS fullCatalogNumber, cleanCatalogNumber AS catalogNumber, rightsHolder, basisOfRecord AS coremaBasisOfRecord, informationWithheld, recordedBy, sex, lifeStage, preparations, disposition, eventDate, country, stateProvince,
+simpledwc.occurrenceID as itemID, organismID, materialSampleID, institutionCode, collectionCode, catalogNumber AS fullCatalogNumber, cleanCatalogNumber AS catalogNumber, rightsHolder, basisOfRecord AS coremaBasisOfRecord, informationWithheld, recordedBy, sex, lifeStage, preparations, disposition, eventDate, country, stateProvince,
     county, locality, minimumElevationInMeters, decimalLatitude, decimalLongitude, identificationQualifier, identifiedBy, typeStatus, scientificName, "order", family, genus, specificEpithet, infraspecificEpithet, taxonRank, scientificNameAuthorship,
     preparationType, 
     preservationType,
@@ -221,7 +234,7 @@ simpledwc.occurrenceID as itemID, organismID, institutionCode, collectionCode, c
 
     materialSampleType, concentration, concentrationUnit,
 
-    identifier
+    identifier AS associatedMedia
 
     FROM simpledwc
     LEFT JOIN preservation on simpledwc.occurrenceID = preservation.coreid
@@ -373,9 +386,10 @@ const itemToArraysOnSameLine = (rows,basedOn) => {
         } else if (rows[i].organismID != null) {
             if (rows[i].organismID == rows[i+1].organismID) {
                 if (existingRow == 'nothing') {
-                    rows[i].catalogNumber = [rows[i].catalogNumber]
+                    rows[i].fullCatalogNumber = [rows[i].fullCatalogNumber]
                     rows[i].materialSampleType = [rows[i].materialSampleType]
                     if (rows[i].RelCatNo != '') {
+                        //console.log(rows[i].RelCatNo)
                         rows[i].RelCatNo = [rows[i].RelCatNo]    
                     }
                     rows[i].preservationType = [rows[i].preservationType]
@@ -390,7 +404,7 @@ const itemToArraysOnSameLine = (rows,basedOn) => {
                     existingRow = rows[i]
                 } else {
                     if (basedOn === 'corema') {
-                        existingRow.catalogNumber.push(rows[i].catalogNumber)
+                        existingRow.fullCatalogNumber.push(rows[i].fullCatalogNumber)
                     }
                     existingRow.materialSampleType.push(rows[i].materialSampleType)
                     if (Array.isArray(rows[i].RelCatNo)) {
@@ -419,7 +433,7 @@ const itemToArraysOnSameLine = (rows,basedOn) => {
                     } else if (basedOn === 'corema') {
                         existingRow.preparationType.push(rows[i].musitBasisOfRecord)
                     }
-                    existingRow.catalogNumber = existingRow.catalogNumber.join(' | ')
+                    existingRow.fullCatalogNumber = existingRow.fullCatalogNumber.join(' | ')
                     existingRow.materialSampleType = existingRow.materialSampleType.join(' | ')
                     existingRow.RelCatNo = existingRow.RelCatNo.join(' | ')
                     existingRow.preparationType = existingRow.preparationType.join(' | ')
@@ -550,34 +564,34 @@ async function runCoremaStitch(collection, coremaFolder, outfile) {
     //     } 
     // }
     // 1. delete data from tables in a sqlite-database (one per organismgroup), and fill tables again from musit- and coremadumpfiles
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/amplification.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/amplification.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
     
-    // await deleteFromTable(db,'amplification')
-    // await deleteFromTable(db,'materialsample')
-    // await deleteFromTable(db,'multimedia')
-    // await deleteFromTable(db,'permit')
-    // await deleteFromTable(db,'preparation')
-    // await deleteFromTable(db,'preservation')
-    // await deleteFromTable(db,'resourcerelationship')
-    // await deleteFromTable(db,'simpledwc')
+    await deleteFromTable(db,'amplification')
+    await deleteFromTable(db,'materialsample')
+    await deleteFromTable(db,'multimedia')
+    await deleteFromTable(db,'permit')
+    await deleteFromTable(db,'preparation')
+    await deleteFromTable(db,'preservation')
+    await deleteFromTable(db,'resourcerelationship')
+    await deleteFromTable(db,'simpledwc')
 
-    // db.run("BEGIN TRANSACTION");
-    // await fillTable(db,'amplification',`${pathToCoremaDumps}${coremaFolder}/amplification.txt`)
-    // await fillTable(db,'materialsample',`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
-    // await fillTable(db,'multimedia',`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
-    // await fillTable(db,'permit',`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
-    // await fillTable(db,'preparation',`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
-    // await fillTable(db,'preservation',`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
-    // await fillTable(db,'resourcerelationship',`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
-    // await fillTable(db,'simpledwc',`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
-    // db.run("COMMIT");
+    db.run("BEGIN TRANSACTION");
+    await fillTable(db,'amplification',`${pathToCoremaDumps}${coremaFolder}/amplification.txt`)
+    await fillTable(db,'materialsample',`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
+    await fillTable(db,'multimedia',`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
+    await fillTable(db,'permit',`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
+    await fillTable(db,'preparation',`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
+    await fillTable(db,'preservation',`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
+    await fillTable(db,'resourcerelationship',`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
+    await fillTable(db,'simpledwc',`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
+    db.run("COMMIT");
 
     const start = coremaFolder.length + 2
     console.log(start)
@@ -608,7 +622,7 @@ async function runCoremaStitch(collection, coremaFolder, outfile) {
                     
                 } else 
                 if (rows[i].organismID == rows[i+1].organismID) {
-                    if (existingRow == 'nothing') {
+                    if (existingRow == 'nothing') { // if this is the first line for this object
                         rows[i].fullCatalogNumber = [rows[i].fullCatalogNumber]
                         rows[i].preservationType = [rows[i].preservationType]
                         rows[i].preparationType = [rows[i].preparationType]
@@ -620,21 +634,25 @@ async function runCoremaStitch(collection, coremaFolder, outfile) {
                         rows[i].BOLDProcessID = [rows[i].BOLDProcessID]
                         rows[i].concentration = [rows[i].concentration]
                         rows[i].concentrationUnit = [rows[i].concentrationUnit]
-                        rows[i].identifier = [rows[i].identifier]
+                        rows[i].associatedMedia = [rows[i].associatedMedia]
                         existingRow = rows[i]
-                    } else {
-                        existingRow.fullCatalogNumber.push(rows[i].fullCatalogNumber)
-                        existingRow.preservationType.push(rows[i].preservationType)
-                        existingRow.preparationType.push(rows[i].preparationType)
-                        existingRow.preparationMaterials.push(rows[i].preparationMaterials)
-                        existingRow.preparedBy.push(rows[i].preparedBy)
-                        existingRow.preparationDate.push(rows[i].preparationDate)
-                        existingRow.materialSampleType.push(rows[i].materialSampleType)
-                        existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
-                        existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
-                        existingRow.concentration.push(rows[i].concentration)
-                        existingRow.concentrationUnit.push(rows[i].concentrationUnit)
-                        existingRow.identifier.push(rows[i].identifier)
+                    } else { // if this is not the first line for this object
+                        // check if associatedMedia is the only difference between the lines
+                        if (rows[i].materialSampleID == rows[i-1].materialSampleID){
+                            existingRow.associatedMedia.push(rows[i].associatedMedia)    
+                        } else {
+                            existingRow.fullCatalogNumber.push(rows[i].fullCatalogNumber)
+                            existingRow.preservationType.push(rows[i].preservationType)
+                            existingRow.preparationType.push(rows[i].preparationType)
+                            existingRow.preparationMaterials.push(rows[i].preparationMaterials)
+                            existingRow.preparedBy.push(rows[i].preparedBy)
+                            existingRow.preparationDate.push(rows[i].preparationDate)
+                            existingRow.materialSampleType.push(rows[i].materialSampleType)
+                            existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
+                            existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
+                            existingRow.concentration.push(rows[i].concentration)
+                            existingRow.concentrationUnit.push(rows[i].concentrationUnit)
+                        }
                     }
                 } else {
                     if (existingRow != 'nothing') {
@@ -649,7 +667,7 @@ async function runCoremaStitch(collection, coremaFolder, outfile) {
                         existingRow.BOLDProcessID = existingRow.BOLDProcessID.join(' | ')
                         existingRow.concentration = existingRow.concentration.join(' | ')
                         existingRow.concentrationUnit = existingRow.concentrationUnit.join(' | ')
-                        existingRow.identifier = existingRow.identifier.join(' | ')
+                        existingRow.associatedMedia = existingRow.associatedMedia.join(' | ')
                         processedRows.push(existingRow)
                         existingRow = 'nothing'
                     } else {
@@ -683,8 +701,9 @@ async function runCoremaStitch(collection, coremaFolder, outfile) {
 async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile, basedOn) {
     let dbSelect
     if (basedOn === 'corema') { dbSelect = coremaSelectWithMusit} else { dbSelect = musitSelect}
-    console.log(dbSelect)
-        
+    let double
+    // to choose different stitchfunction when corema-fungi-and-lichens shall have musit-fungi and musit-lichen data attached
+    if (musitFile.includes("fungi") && basedOn === "corema") {double = "yes"} else {double = "no"}
     let dataBaseFile = `${pathToDatabases}${collection}.db`
     db = await openDB(dataBaseFile, collection)
     console.log('db open')
@@ -702,66 +721,101 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     // }
     // 
     // // 1. delete data from tables in a sqlite-database (one per organismgroup), and fill tables again from musit- and coremadumpfiles
-    // await changeEncoding(`${pathToMusitDumps}${musitFile}/${musitFile}.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/amplification.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
-    // await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
+    await changeEncoding(`${pathToMusitDumps}${musitFile}/${musitFile}.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/amplification.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
+    await changeEncoding(`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
     
-    //     //delete data from database
-    // await deleteFromTable(db, `${musitFile}`)
-    // await deleteFromTable(db, 'amplification')
-    // await deleteFromTable(db, 'materialsample')
-    // await deleteFromTable(db, 'permit')
-    // await deleteFromTable(db, 'multimedia')
-    // await deleteFromTable(db, 'preparation')
-    // await deleteFromTable(db, 'preservation')
-    // await deleteFromTable(db, 'simpledwc')
-    // await deleteFromTable(db, 'resourcerelationship')
+    // 1.1 If we stitch corema-fungi-lichens with both of their musitfiles (from corema's perspective):
+    if (double === "yes") {
+        await changeEncoding(`${pathToMusitDumps}lichens_o/lichens_o.txt`)
+        await deleteFromTable(db, 'fungus_lichens_o')
+        db.run("BEGIN TRANSACTION")
+        await fillTable(db, 'fungus_lichens_o', `${pathToMusitDumps}fungus_lichens_o/fungus_lichens_o.txt`)
+    //     await fillTable(db, 'fungus_lichens_o', `${pathToMusitDumps}lichens_o/lichens_o.txt`)
+        db.run("COMMIT")
+    }
+    
+            //delete data from database
+    await deleteFromTable(db, `${musitFile}`)
+    await deleteFromTable(db, 'amplification')
+    await deleteFromTable(db, 'materialsample')
+    await deleteFromTable(db, 'permit')
+    await deleteFromTable(db, 'multimedia')
+    await deleteFromTable(db, 'preparation')
+    await deleteFromTable(db, 'preservation')
+    await deleteFromTable(db, 'simpledwc')
+     await deleteFromTable(db, 'resourcerelationship')
 
     // // fill tables
-    // db.run("BEGIN TRANSACTION");
-    // await fillTable(db, `${musitFile}`,`${pathToMusitDumps}${musitFile}/${musitFile}.txt`)
-    // await fillTable(db, 'amplification',`${pathToCoremaDumps}${coremaFolder}/amplification.txt` )
-    // await fillTable(db,'materialsample',`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
-    // await fillTable(db,'multimedia',`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
-    // await fillTable(db,'permit',`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
-    // await fillTable(db,'preparation',`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
-    // await fillTable(db,'preservation',`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
-    // await fillTable(db,'resourcerelationship',`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
-    // await fillTable(db,'simpledwc',`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
-    // db.run("COMMIT");
+    db.run("BEGIN TRANSACTION");
+    await fillTable(db, `${musitFile}`,`${pathToMusitDumps}${musitFile}/${musitFile}.txt`)
+    await fillTable(db, 'amplification',`${pathToCoremaDumps}${coremaFolder}/amplification.txt` )
+    await fillTable(db,'materialsample',`${pathToCoremaDumps}${coremaFolder}/materialsample.txt`)
+    await fillTable(db,'multimedia',`${pathToCoremaDumps}${coremaFolder}/multimedia.txt`)
+    await fillTable(db,'permit',`${pathToCoremaDumps}${coremaFolder}/permit.txt`)
+    await fillTable(db,'preparation',`${pathToCoremaDumps}${coremaFolder}/preparation.txt`)
+    await fillTable(db,'preservation',`${pathToCoremaDumps}${coremaFolder}/preservation.txt`)
+    await fillTable(db,'resourcerelationship',`${pathToCoremaDumps}${coremaFolder}/resourcerelationship.txt`)
+    await fillTable(db,'simpledwc',`${pathToCoremaDumps}${coremaFolder}/simpledwc.txt`)
+    db.run("COMMIT");
+
+    let samling
+    let prefix
+    let prefixF
+    let prefixL
+    let length
+    let deleteStatement
+    let updateStatement
     
-    let samling = fileList.find(el => el.zipFileName === musitFile)
-    let prefix = samling.urn
-    console.log(prefix)
-    const length = prefix.length
-    console.log(length)
+    if (double === "no") {
+        samling = fileList.find(el => el.zipFileName === musitFile)
+         prefix = samling.urn
+        console.log(prefix)
+        length = prefix.length
+        console.log(length)
+        deleteStatement = `DELETE FROM resourcerelationship
+        WHERE SUBSTR (relatedResourceID,13,${length}) != '${prefix}';`
+        updateStatement = `UPDATE resourcerelationship SET cleanCatalogNumberRecRel = SUBSTR(relatedResourceID,14+${length})`
+    } else if (double === "yes") {
+        // prefixF = "O:F"
+        // prefixL = "O:L"
+        //length = prefixF.length
+        // deleteStatement = `DELETE FROM resourcerelationship
+        // WHERE (SUBSTR (relatedResourceID,13,3) != ${prefixF}) OR (SUBSTR (relatedResourceID,13,3) != ${prefixL})`
+        deleteStatement = `DELETE FROM resourcerelationship
+        WHERE (SUBSTR (relatedResourceID,13,3) != 'O:F') AND (SUBSTR (relatedResourceID,13,3) != 'O:L')`
+        updateStatement = `UPDATE resourcerelationship SET cleanCatalogNumberRecRel = SUBSTR(relatedResourceID,13)`
+    }
+    
+    
     const start = coremaFolder.length + 2
     console.log(start)
-    
+
     db.serialize(() => {
         // remove from resourcerelationship entries other than musit-regno-connections
-        db.run(`DELETE FROM resourcerelationship
-        WHERE SUBSTR (relatedResourceID,1,${length}) != '${prefix}';`)
+        // db.run(`DELETE FROM resourcerelationship
+        // WHERE SUBSTR (relatedResourceID,13,${length}) != '${prefix}';`)
+        db.run(deleteStatement)
         // only first time:
         // .run(`ALTER TABLE resourcerelationship  
         //    ADD cleanCatalogNumberRecRel INTEGER`)
         // .run(`ALTER TABLE simpledwc  
         //    ADD cleanCatalogNumber INTEGER`)
-        // remove prefix (coll-urn) from cleanCatNo
-        .run(`UPDATE resourcerelationship SET cleanCatalogNumberRecRel = SUBSTR(relatedResourceID,${length + 1 })`)
-        // //remove prefix and suffix from corema's catalogNumber
+        // // remove prefix (coll-urn) from cleanCatNo
+        //.run(`UPDATE resourcerelationship SET cleanCatalogNumberRecRel = SUBSTR(relatedResourceID,14+${length})`)
+        .run(updateStatement)
         .run(`UPDATE simpledwc SET cleanCatalogNumber = SUBSTR(catalogNumber,${start},LENGTH(catalogNumber)-${start}-3)`)
         .run(`DROP VIEW IF EXISTS musitRel`)
-        .run(createViewMusitRel(musitFile))
+        .run(createViewMusitRel(musitFile,double))
         .run(`DROP VIEW IF EXISTS coremaFields`)
         // create view with all corema-fields in one table
-        .run(createViewCoremaFields)
+        .run(createViewCoremaFields(double))
         .all( dbSelect, (err, rows) => {
             if (err) {
                 console.error(err.message)
@@ -787,20 +841,32 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
 }
 
 async function main () {
-    // await runCoremaStitch('birds2', 'NHMO-BI','birds_stitched.txt')
-    // await runCoremaStitch('mammals','NHMO-DMA','mammals_stitched.txt')
-    //   await runCoremaStitch('fish_herptiles','NHMO-DFH','fish_herptiles_stitched.txt')
-    //   await runCoremaStitch('DNA_other','NHMO-DOT','DNA_other_stitched.txt')
-    
-    // // ///// from musit's point of view; all musits data, add from corema
-    // await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit')
-    // await runMusitCoremaStitch('lichens','lichens_o','O-DFL', 'lichens_stitched.txt','musit')
-    // await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','musit')
-    // await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt','musit')
+    // concatenate fungus- and lichen-musit-dumpfiles to stitch musit data to fungi-lichen-corema-data
+    if (fs.existsSync(`${pathToMusitDumps}fungus_lichens_o/fungus_lichens_o.txt`)) { fs.unlinkSync(`${pathToMusitDumps}fungus_lichens_o/fungus_lichens_o.txt`) }    
+    const fungusFile = fs.readFileSync(`${pathToMusitDumps}fungus_o/fungus_o.txt`)
+    fs.writeFileSync(`${pathToMusitDumps}fungus_lichens_o/fungus_lichens_o.txt`, fungusFile, function (err) {
+        if (err) return console.log(err)
+    })
+    const lichenFile = fs.readFileSync(`${pathToMusitDumps}lichens_o/lichens_o.txt`)
+    fs.appendFileSync(`${pathToMusitDumps}fungus_lichens_o/fungus_lichens_o.txt`,lichenFile, function (err) {
+        if (err) return console.log(err)
+    })
 
-    // /////// from coremas point of fiew; all corema data, add from musit
-    await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema')
-    await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','corema')
+
+    await runCoremaStitch('birds2', 'NHMO-BI','birds_stitched.txt')
+    await runCoremaStitch('mammals','NHMO-DMA','mammals_stitched.txt')
+    await runCoremaStitch('fish_herptiles','NHMO-DFH','dna_fish_herptiles_stitched.txt')
+    await runCoremaStitch('DNA_other','NHMO-DOT','DNA_other_stitched.txt')
+    
+    // ///// from musit's point of view; all musits data, add from corema
+    await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit')
+    await runMusitCoremaStitch('lichens','lichens_o','O-DFL', 'lav_stitched.txt','musit')
+    await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','musit')
+     await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt','musit')
+
+    /////// from coremas point of fiew; all corema data, add from musit
+    await runMusitCoremaStitch('fungi','fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema')
+    await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema')
     await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema')
 }
 

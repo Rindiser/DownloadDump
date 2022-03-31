@@ -1,9 +1,4 @@
 data/
 node_modules/
-src/utils/sopp_stitched.txt
-src/utils/lichens_stitched.txt
-src/utils/entomology_stitched.txt
-src/utils/entomology_stitched.txt
-src/utils/vascular_stitched.txt
 *.zip
 *.geojson
