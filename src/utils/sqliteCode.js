@@ -638,8 +638,11 @@ async function runCoremaStitch(collection, coremaFolder, outfile) {
                         existingRow = rows[i]
                     } else { // if this is not the first line for this object
                         // check if associatedMedia is the only difference between the lines
-                        if (rows[i].materialSampleID == rows[i-1].materialSampleID){
-                            existingRow.associatedMedia.push(rows[i].associatedMedia)    
+                        if (rows[i].materialSampleID == rows[i-1].materialSampleID) {
+                            if (rows[i].associatedMedia) {
+                                existingRow.associatedMedia.push(rows[i].associatedMedia)    
+                            }
+                            
                         } else {
                             existingRow.fullCatalogNumber.push(rows[i].fullCatalogNumber)
                             existingRow.preservationType.push(rows[i].preservationType)
@@ -854,20 +857,20 @@ async function main () {
 
 
     await runCoremaStitch('birds2', 'NHMO-BI','birds_stitched.txt')
-    await runCoremaStitch('mammals','NHMO-DMA','mammals_stitched.txt')
-    await runCoremaStitch('fish_herptiles','NHMO-DFH','dna_fish_herptiles_stitched.txt')
-    await runCoremaStitch('DNA_other','NHMO-DOT','DNA_other_stitched.txt')
+    // await runCoremaStitch('mammals','NHMO-DMA','mammals_stitched.txt')
+    // await runCoremaStitch('fish_herptiles','NHMO-DFH','dna_fish_herptiles_stitched.txt')
+    // await runCoremaStitch('DNA_other','NHMO-DOT','DNA_other_stitched.txt')
     
-    // ///// from musit's point of view; all musits data, add from corema
-    await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit')
-    await runMusitCoremaStitch('lichens','lichens_o','O-DFL', 'lav_stitched.txt','musit')
-    await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','musit')
-     await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt','musit')
+    // // ///// from musit's point of view; all musits data, add from corema
+    // await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit')
+    // await runMusitCoremaStitch('lichens','lichens_o','O-DFL', 'lav_stitched.txt','musit')
+    // await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','musit')
+    //  await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt','musit')
 
-    /////// from coremas point of fiew; all corema data, add from musit
-    await runMusitCoremaStitch('fungi','fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema')
-    await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema')
-    await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema')
+    // /////// from coremas point of fiew; all corema data, add from musit
+    // await runMusitCoremaStitch('fungi','fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema')
+    // await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema')
+    // await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema')
 }
 
 main()
