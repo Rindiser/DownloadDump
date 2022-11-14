@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
-// let norwegianName = "fiskesluovvaraš"
-let norwegianName = "fjellrev"
+let norwegianName = "rødrev"
+// let norwegianName = "fjellrev"
 let latinName = ""
 let artsObsNumber = ""
 
@@ -185,6 +185,6 @@ const getRedlistStatus = async (latinName, redlistYear) => {
 }
 
 
-getArtsObsData(28215006) // 28215006 2213006
+// getArtsObsData(28215006) // 28215006 2213006
 // getLatinName(norwegianName)
-// getRedlistStatus('vulpes lagopus', '2015')
+getRedlistStatus('vulpes lagopus', '2021')
