@@ -1,0 +1,232 @@
+[
+{
+    "filMetadata": {
+        "forklaring": "i kombinasjon med name objektet gir occurranceFile filnavn for occurrance fila" ,
+        "OccurranceFile": "_occurrence.txt",
+        "mediaFile": "_media.txt",
+        "museum": "nhm" 
+    },
+    "coremaFiles" : ["occurrence", "amplification","materialsample","multimedia","permit","preparation","preservation","resourcerelationship"]
+},
+{
+    "source": "journals",
+    "journalGroups": ["zoologi", "paleontologi"],
+    "journalFiles":{
+        "zoologi": "zooJournaler",
+        "paleontologi": "palJournaler",
+        "botanikk": "botJournaler"
+    }
+},
+{
+    "source": "musit",
+    "orgGroup": "botanikk",
+    "name": "alger",
+    "zipFileName": "alge_o",
+    "mediaFile": "_media",
+    "occurrenceFileSuffix": "_occurrence.txt", 
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/alge_o.zip"
+},
+{
+    "source": "musit",
+    "orgGroup": "botanikk",
+    "name": "vascular",
+    "zipFileName": "vascular_o",
+    "mediaFile": "_media",
+    "occurrenceFileSuffix": "_stitched.txt",
+    "associatedCollection": "dna_vascular",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/vascular_o.zip"
+},
+{
+    "source": "musit",
+    "orgGroup": "mykologi",
+    "name": "lav",
+    "zipFileName": "lichens_o",
+    "mediaFile": "_media",
+    "occurrenceFileSuffix": "_stitched.txt",
+    "associatedCollection": "dna_fungi_lichens",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/lichens_o.zip"
+},
+{
+    "source": "musit",
+    "orgGroup": "botanikk",
+    "name": "moser",
+    "zipFileName": "moss_o",
+    "mediaFile": "_media",
+    "occurrenceFileSuffix": "_occurrence.txt", 
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/moss_o.zip"
+},
+{
+    "source": "musit",
+    "orgGroup": "mykologi",
+    "name": "sopp",
+    "zipFileName": "fungus_o",
+    "mediaFile": "_media",
+    "occurrenceFileSuffix": "_stitched.txt",
+    "associatedCollection": "dna_fungi_lichens",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/fungus_o.zip"
+},
+{
+    "source": "corema",
+    "orgGroup": "mykologi",
+    "name": "dna_fungi_lichens",
+    "zipFileName": "occurrence",
+    "mediaFile": "_multimedia",
+    "occurrenceFileSuffix": "_stitched.txt",
+    "associatedCollection": ["sopp","lav"],
+    "url": "https://ipt.gbif.no/archive.do?r=o_dna_fungi_lichens",
+    "akronym": "O-DFL"
+},
+{
+    "source": "corema",
+    "orgGroup": "botanikk",
+    "name": "dna_vascular",
+    "zipFileName": "occurrence",
+    "mediaFile": "_multimedia",
+    "occurrenceFileSuffix": "_stitched.txt",
+    "associatedCollection": "vascular",
+    "url": "https://ipt.gbif.no/archive.do?r=o_dna_plants",
+    "akronym": "O-DP"
+},
+{
+    "source": "musit",
+    "orgGroup": "zoologi",
+    "name": "entomology",
+    "zipFileName": "entomology_nhmo",
+    "mediaFile": "_media",
+    "occurrenceFileSuffix": "_stitched.txt",
+    "associatedCollection": "dna_entomology",
+    "url": "http://www.unimus.no/nedlasting/datasett/naturhistorie/entomology_nhmo.zip"
+},
+{
+    "source": "access",
+    "orgGroup": "zoologi",
+    "name": "fisk",
+    "zipFileName": "occurrence",
+    "mediaFile": "",
+    "occurrenceFileSuffix": "_occurrence.txt",
+    "url": "https://ipt.gbif.no/archive.do?r=o_fish",
+    "akronym": "NHMO-J"
+},
+{
+    "source": "corema",
+    "orgGroup": "zoologi",
+    "name": "mammals",
+    "zipFileName": "occurrence",
+    "mediaFile": "_multimedia",
+    "occurrenceFileSuffix": "_stitched.txt",
+    "url": "https://ipt.gbif.no/archive.do?r=o_mammals",
+    "akronym": "NHMO-BMA"
+},
+{
+    "source": "corema",
+    "orgGroup": "zoologi",
+    "name": "birds",
+    "zipFileName": "occurrence",
+    "mediaFile": "_multimedia",
+    "occurrenceFileSuffix": "_stitched.txt",
+    "url": "https://ipt.gbif.no/archive.do?r=birds",
+    "akronym": "NHMO-BI"
+},
+
+{
+    "source": "corema",
+    "orgGroup": "zoologi",
+    "name": "dna_entomology",
+    "zipFileName": "occurrence",
+    "mediaFile": "_multimedia",
+    "occurrenceFileSuffix": "_stitched.txt",
+    "associatedCollection": "entomology",
+    "url": "https://ipt.gbif.no/archive.do?r=o_dna_arthropods",
+    "akronym": "NHMO-DAR"
+},
+{
+    "source": "corema",
+    "orgGroup": "zoologi",
+    "name": "dna_fish_herptiles",
+    "zipFileName": "occurrence",
+    "mediaFile": "_multimedia",
+    "occurrenceFileSuffix": "_stitched.txt",
+    "url": "https://ipt.gbif.no/archive.do?r=o_dna_fish_herptiles",
+    "akronym": "NHMO-DFH"
+},
+{
+    "source": "corema",
+    "orgGroup": "zoologi",
+    "name": "dna_other",
+    "zipFileName": "occurrence",
+    "mediaFile": "_multimedia",
+    "occurrenceFileSuffix": "_stitched.txt",
+    "url": "https://ipt.gbif.no/archive.do?r=o_dna_other",
+    "akronym": "NHMO-DOT"
+},
+{
+    "source": "access",
+    "orgGroup": "geologi",
+    "name": "malmer",
+    "zipFileName": "occurrence",
+    "mediaFile": "",
+    "occurrenceFileSuffix": "_occurrence.txt", 
+    "url": "",
+    "akronym": "GMO-M"
+},
+{
+    "source": "access",
+    "orgGroup": "geologi",
+    "name": "utenlandskeBergarter",
+    "zipFileName": "occurrence",
+    "mediaFile": "",
+    "occurrenceFileSuffix": "_occurrence.txt", 
+    "url": "",
+    "akronym": "GMO-BU"
+},
+{
+    "source": "access",
+    "orgGroup": "geologi",
+    "name": "oslofeltet",
+    "zipFileName": "occurrence",
+    "mediaFile": "",
+    "occurrenceFileSuffix": "_occurrence.txt", 
+    "url": "",
+    "akronym": "GMO-BO"
+},
+{
+    "source": "access",
+    "orgGroup": "paleontologi",
+    "name": "palTyper",
+    "zipFileName": "occurrence",
+    "mediaFile": "",
+    "occurrenceFileSuffix": "_occurrence.txt", 
+    "url": "",
+    "akronym": "PMO"
+},
+{
+    "source": "access",
+    "orgGroup": "paleontologi",
+    "name": "fossiler",
+    "zipFileName": "occurrence",
+    "mediaFile": "",
+    "occurrenceFileSuffix": "_occurrence.txt", 
+    "url": "",
+    "akronym": "PMO"
+},
+{
+    "source": "excel",
+    "orgGroup": "other",
+    "name": "utad",
+    "zipFileName": "occurrence",
+    "mediaFile": "",
+    "occurrenceFileSuffix": "_occurrence.txt", 
+    "url": "",
+    "akronym": "NHMO-U"
+},
+{
+    "source": "excel",
+    "orgGroup": "other",
+    "name": "bulk",
+    "zipFileName": "occurrence",
+    "mediaFile": "",
+    "occurrenceFileSuffix": "_occurrence.txt", 
+    "url": "",
+    "akronym": "NHMO-BULK"
+}
+]

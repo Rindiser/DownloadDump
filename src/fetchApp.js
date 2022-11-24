@@ -1,122 +1,139 @@
-//https://www.npmjs.com/package/node-fetch
+//makeFolders
+// rydd i kode
+// nye stier
+// dok
 
 const fetch = require('node-fetch');
 const fs = require('fs')
-const fileListNhm = require('./utils/fileList')
-const fileListTmu = require('./utils/fileListTmu')
-const fileListUm = require('./utils/fileListUm')
-const fileListNbh = require('./utils/fileListNbh')
+const fileListNhm = require('./../../test/src/utils/fileListNhm')
+const fileListTmu = require('./../../test/src/utils/fileListTmu')
+const fileListUm = require('./../../test/src/utils/fileListUm')
+const fileListNbh = require('./../../test/src/utils/fileListNbh')
+// const fileListNhm = require('./../../src/utils/fileListNhm')
+// const fileListTmu = require('./../../src/utils/fileListTmu')
+// const fileListUm = require('./../../src/utils/fileListUm')
+// const fileListNbh = require('./../../src/utils/fileListNbh')
+
 const AbortController = require('abort-controller')
 const util = require('util')
 const AdmZip = require('adm-zip');
 const chalk = require('chalk');
 const streamPipeline = util.promisify(require('stream').pipeline)
-const mkdirp = require('mkdirp')
-
-
-// console.log(chalk.red(fileList.length));
-console.log('Starting download....');
-// makingsure that renamed folder exist, if not create it
-const makeFolders = ()=> {
-  const museum = ['nhm','tmu','um', 'nbh']
-  let made = mkdirp.sync('./src/data//renamed')
-  for (let index = 0; index < museum.length; index++) {
-    made = mkdirp.sync('./src/data//renamed/' + museum[index])
-    console.log(chalk.green(`made directories, starting with ${made}`))
-  }
-}
-
-
-
+const mkdirp = require('mkdirp');
+const { resolve } = require('path');
 
 const controller = new AbortController();
-const timeout = setTimeout(
-  () => { controller.abort(); },
-  180000, // timeout etter 3 minutt
-);
 
-const fsRenameFiles = (oldName,newName) => {
-  console.log(oldName);
-  console.log(newName);
-  fs.rename(oldName, newName, (err) => {
-    if (err){
-      console.log(chalk.red('Rename error: ' + err));
-    } else {
-    console.log(chalk.green('Rename complete!'));
-    } })
-  
-}
-
-// move and rename the files
-function makeFileNames (zipFile, museum) {
-  console.log(zipFile);
-  museum = museum + "/"
-  const oldPath = "./src/data/unzip/"
-  const newPath = "./src/data/renamed/" 
-
-  let oldName = oldPath + zipFile.zipFileName + ".txt"
-  let newName = newPath + museum + zipFile.name + "_occurrence.txt"
-  fsRenameFiles(oldName,newName)
-
-  let mediaOldName = ""
-  let mediaNewName = ""
-
-  if (zipFile.source === "musit") {   
-    mediaOldName = oldPath + zipFile.zipFileName + zipFile.mediaFile + ".txt"
-    mediaNewName = newPath + museum + zipFile.name + "_media.txt"
-    fsRenameFiles(mediaOldName,mediaNewName)
-  } else if (zipFile.source === "corema") {
-    for (ii = 1, lens = fileListNhm[0].coremaFiles.length; ii < lens; ii++) {
-      miscOldName = oldPath + fileListNhm[0].coremaFiles[ii] + ".txt"
-      miscNewName = newPath + museum + zipFile.name + "_" + fileListNhm[0].coremaFiles[ii] + ".txt"
-      fsRenameFiles(miscOldName,miscNewName)      
+// tror ikke vi trenger denne, hopperover dette steget. eller -er det for datene inne i nettportal?
+// nei, for dataene går ikke rett dit...
+// making sure that renamed folder exist, if not create it
+const makeFolders = ()=> {
+    // ta denne fra fileList (?)
+    const museum = ['nhm','tmu','um', 'nbh']
+    for (let index = 0; index < museum.length; index++) {
+        made = mkdirp.sync('./../../test/src/data/' + museum[index])
     }
-  } 
- 
+   
+    // denne skjønner ikke Gunnhild. endre, nå bruker vi ikke lenger "renamed"-mapper
+    // let made = mkdirp.sync('./src/data//renamed')
+    // for (let index = 0; index < museum.length; index++) {
+    //   made = mkdirp.sync('./src/data//renamed/' + museum[index])
+    //   console.log(chalk.green(`made directories, starting with ${made}`))
+    // }
 }
+  
+const fsRenameFiles = (oldName,newName) => {
+    console.log(oldName);
+    console.log(newName);
+    fs.rename(oldName, newName, (err) => {
+        if (err){
+            console.log(chalk.red('Rename error: ' + err));
+        } else {
+            console.log(chalk.green('Rename complete!'));
+        }
+    })
+}
+
+// rename files to include collection-name in file-name
+// in: object from filelist
+function makeFileNames (zipFile, museum) {
+    console.log('linje 33 ' + museum)
+    museum = museum + "/"
+    const oldPath = "./../../musitDumps/"
+    const newPath = `./../../test/src/data/`
+      console.log('app linje 41 ' + zipFile.occurrenceFileSuffix)
+    if (zipFile.occurrenceFileSuffix.includes('occurrence')) {
+        //  const newPath = "./src/data/renamed/" 
+        // const newPath = `./../../NHM-portaler/src/data/` 
+        let oldName = oldPath + zipFile.zipFileName + '/' + zipFile.zipFileName +".txt"
+        let newName = newPath + museum + zipFile.name + "_occurrence.txt"
+        fsRenameFiles(oldName,newName)
+    
+        let mediaOldName = ""
+        let mediaNewName = ""
+    
+        if (zipFile.source === "musit") {   
+            mediaOldName = oldPath + zipFile.zipFileName + '/' + zipFile.zipFileName + zipFile.mediaFile + ".txt"
+            mediaNewName = newPath + museum + zipFile.name + "_media.txt"
+            fsRenameFiles(mediaOldName,mediaNewName)
+        }
+    } 
+    // else if (zipFile.occurrenceFileSuffix.includes('stitch')) {
+    //     const newPath = `./../musitDumps/${zipFile.zipFileName}/` 
+    //     let oldName = oldPath + zipFile.zipFileName + ".txt"
+    //     let newName = newPath + zipFile.zipFileName + ".txt"
+    //     fsRenameFiles(oldName,newName)
+    // }
+}
+  
 
 // Hovedfunksjon
 // download the files and unzip
-async function download (samlinger, callback) {
- const fileList = samlinger
- const museum = fileList[0].filMetadata.museum
- for (i = 1, len = fileList.length; i < len; i++) {
-//  for (i = 1, len = fileList.length; i < 4; i++) {
-    let fileName = './src/data/' + fileList[i].name + "_" + museum + '.zip'
-
-    const response = await fetch(fileList[i].url, { signal: controller.signal })
-    .then(response =>  streamPipeline(response.body, fs.createWriteStream(fileName)))
-    .catch(err => console.log(chalk.red(err)))
-    
-    // reading archives
-    try {
-      const zip = new AdmZip(fileName);
-      // extracts everything, overwrite = true
-     zip.extractAllTo("./src/data/unzip/", true)
-     makeFileNames (fileList[i], museum)
-    } catch (error) {
-      console.log(chalk.red(error));
-    }
-  } 
-  if (i = fileList.length) {
-    console.log(chalk.green('done!'))
-    // process.exit() // hvis alle filer er downloaded og unzipped så slå av programmet
-  } 
+async function download (fileList, callback) {
+    const museum = fileList[0].filMetadata.museum
+    for (i = 1, len = fileList.length; i < len; i++) {
+        if (fileList[i].source == "musit") {
+            // let fileName = './src/data/' + fileList[i].name + "_" + museum + '.zip'
+            // let fileName = './data/' + fileList[i].zipFileName +  '.zip'
+            let fileName = './../../musitDumps/' + fileList[i].zipFileName +  '.zip'
+            const response = await fetch(fileList[i].url, { signal: controller.signal })
+            .then(response =>  streamPipeline(response.body, fs.createWriteStream(fileName)))
+            .catch(err => console.log(chalk.red(err)))
+            // reading archives
+            try {
+                const zip = new AdmZip(fileName);
+                // extracts everything, overwrite = true
+                zip.extractAllTo('./../../musitDumps/' + fileList[i].zipFileName, true)
+                console.log(fileList[i] + ' linje 108')
+                makeFileNames (fileList[i], museum)
+                
+                
+            } catch (error) {
+                console.log(chalk.red(error));
+            }
+        }
+    } 
 }
-
+   
 
 async function getFilesAllMuseum() {
-  try {
-  makeFolders()
-  await download(fileListUm)
-  await download(fileListTmu)
-  await download(fileListNbh)
-  await download(fileListNhm)
-  process.exit() // hvis alle filer er downloaded og unzipped så slå av programmet
-} catch (error) {
- console.log(error);   
+    try {
+        makeFolders()
+        await download(fileListUm)
+        await download(fileListTmu)
+        await download(fileListNbh)
+        await download(fileListNhm)
+        // resolve('success')
+        // this is now in downloadAndProcessDumps.js:
+        // process.exit() // hvis alle filer er downloaded og unzipped så slå av programmet
+        
+    } catch (error) {
+        console.log(error);   
+    }
 }
+  
+// getFilesAllMuseum()
+
+module.exports = { 
+    getFilesAllMuseum
 }
-
-getFilesAllMuseum()
-

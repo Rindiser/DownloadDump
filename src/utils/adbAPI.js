@@ -186,5 +186,5 @@ const getRedlistStatus = async (latinName, redlistYear) => {
 
 
 // getArtsObsData(28215006) // 28215006 2213006
-// getLatinName(norwegianName)
-getRedlistStatus('vulpes lagopus', '2021')
+getLatinName(norwegianName)
+// getRedlistStatus('vulpes lagopus', '2015')
