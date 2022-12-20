@@ -9,10 +9,10 @@ const fileListNhm = require('./../../test/src/utils/fileListNhm')
 const fileListTmu = require('./../../test/src/utils/fileListTmu')
 const fileListUm = require('./../../test/src/utils/fileListUm')
 const fileListNbh = require('./../../test/src/utils/fileListNbh')
-// const fileListNhm = require('./../../src/utils/fileListNhm')
-// const fileListTmu = require('./../../src/utils/fileListTmu')
-// const fileListUm = require('./../../src/utils/fileListUm')
-// const fileListNbh = require('./../../src/utils/fileListNbh')
+// const fileListNhm = require('./../../portal/src/utils/fileListNhm')
+// const fileListTmu = require('./../../portal/src/utils/fileListTmu')
+// const fileListUm = require('./../../portal/src/utils/fileListUm')
+// const fileListNbh = require('./../../portal/src/utils/fileListNbh')
 
 const AbortController = require('abort-controller')
 const util = require('util')
@@ -31,6 +31,7 @@ const makeFolders = ()=> {
     // ta denne fra fileList (?)
     const museum = ['nhm','tmu','um', 'nbh']
     for (let index = 0; index < museum.length; index++) {
+        // made = mkdirp.sync('./../../portal/src/data/' + museum[index])
         made = mkdirp.sync('./../../test/src/data/' + museum[index])
     }
    
@@ -61,6 +62,7 @@ function makeFileNames (zipFile, museum) {
     museum = museum + "/"
     const oldPath = "./../../musitDumps/"
     const newPath = `./../../test/src/data/`
+    // const newPath = `./../../portal/src/data/`
       console.log('app linje 41 ' + zipFile.occurrenceFileSuffix)
     if (zipFile.occurrenceFileSuffix.includes('occurrence')) {
         //  const newPath = "./src/data/renamed/" 
@@ -79,7 +81,7 @@ function makeFileNames (zipFile, museum) {
         }
     } 
     // else if (zipFile.occurrenceFileSuffix.includes('stitch')) {
-    //     const newPath = `./../musitDumps/${zipFile.zipFileName}/` 
+        //     const newPath = `./../musitDumps/${zipFile.zipFileName}/` 
     //     let oldName = oldPath + zipFile.zipFileName + ".txt"
     //     let newName = newPath + zipFile.zipFileName + ".txt"
     //     fsRenameFiles(oldName,newName)
@@ -88,7 +90,7 @@ function makeFileNames (zipFile, museum) {
   
 
 // Hovedfunksjon
-// download the files and unzip
+// download the musitfiles and unzip
 async function download (fileList, callback) {
     const museum = fileList[0].filMetadata.museum
     for (i = 1, len = fileList.length; i < len; i++) {
@@ -105,6 +107,7 @@ async function download (fileList, callback) {
                 // extracts everything, overwrite = true
                 zip.extractAllTo('./../../musitDumps/' + fileList[i].zipFileName, true)
                 console.log(fileList[i] + ' linje 108')
+                console.log(fileList[i])
                 makeFileNames (fileList[i], museum)
                 
                 
@@ -115,6 +118,31 @@ async function download (fileList, callback) {
     } 
 }
    
+// Hovedfunksjon II
+// download the coremafiles and unzip
+async function downloadCorema (fileList, callback) {
+    // let fileName = './../../../coremaDumper/NHMO-DAR/NHMO-DAR.zip'
+    // const zip = new AdmZip(fileName);
+    // // extracts everything, overwrite = true
+    // zip.extractAllTo('./../../coremaDumper_forPortal/NHMO-DAR/', true)
+
+    for (i = 1, len = fileList.length; i < len; i++) {
+        if (fileList[i].source == "corema") {
+            
+            let fileName = './../../../coremaDumper/' + fileList[i].akronym + '/' + fileList[i].akronym + '.zip'
+            // extract all files from zip-file in coremaDump-folder to local coremaDump-folder for portal
+            try {
+                const zip = new AdmZip(fileName);
+                // extracts everything, overwrite = true
+                zip.extractAllTo('./../../coremaDumper_forPortal/' + fileList[i].akronym, true)
+                
+            } catch (error) {
+                console.log(chalk.red(error));
+            }
+        }
+    } 
+}
+
 
 async function getFilesAllMuseum() {
     try {
@@ -123,6 +151,7 @@ async function getFilesAllMuseum() {
         await download(fileListTmu)
         await download(fileListNbh)
         await download(fileListNhm)
+        await downloadCorema(fileListNhm)
         // resolve('success')
         // this is now in downloadAndProcessDumps.js:
         // process.exit() // hvis alle filer er downloaded og unzipped så slå av programmet
