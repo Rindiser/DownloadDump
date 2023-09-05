@@ -136,11 +136,12 @@ async function downloadCorema (fileList, callback) {
                 // extracts everything, overwrite = true
                 zip.extractAllTo('./../../coremaDumper_forPortal/' + fileList[i].akronym, true)
                 
+                
             } catch (error) {
                 console.log(chalk.red(error));
             }
         }
-    } 
+    }  
 }
 
 
@@ -161,8 +162,8 @@ async function getFilesAllMuseum() {
     }
 }
   
-// getFilesAllMuseum()
-
+getFilesAllMuseum()
+// 
 module.exports = { 
     getFilesAllMuseum
 }

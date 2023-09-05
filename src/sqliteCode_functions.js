@@ -1,11 +1,10 @@
 const sqlite3 = require('sqlite3').verbose()
 const fs = require('fs')
 const papa = require('papaparse')
-// const fileList = require('./../../src/utils/fileListNhm')
+// const fileList = require('./../../portal/src/utils/fileListNhm')
 const fileList = require('./../../test/src/utils/fileListNhm')
 const csvParser = require('csv-parser')
 const { resolve } = require('path')
-const { convertArrayToCSV } = require('convert-array-to-csv');
 
 const pathToCoremaDumps = './../../../coremaDumper/'
 const pathToCoremaDumpsForPortal = './../../coremaDumper_forPortal/'
@@ -14,7 +13,33 @@ const pathToDatabases = './../../sqliteDatabases/'
 // const outfilePath = '../../portal/src/data/nhm/'
 const outfilePath = './../../test/src/data/nhm/'
 
+const  array_to_file = (outfile,subArray) => {
 
+    let logger = fs.createWriteStream(outfile, {
+        flags: 'a' // means append
+    })
+    
+    console.log("array_to_file starts")
+    for (let i = 0; i<subArray.length; i++) {
+        logger.write(subArray[i].replace(/"/g,""))
+        logger.write("\n")
+    }
+}
+
+function writePartToFile(part,lap,processedRows,fieldNames,outfile) {
+    let logger = fs.createWriteStream(outfile, {
+        flags: 'a' // means append
+    })
+    let partOfProcessedRows = processedRows.slice(part*(lap-1), part * lap)
+    let partCsvtxt = partOfProcessedRows.map(mapElementToColumns(fieldNames))
+    partOfProcessedRows.length = 0
+    for (let i = 0; i < partCsvtxt.length; i++) {
+        // writes to outfile:
+        logger.write(partCsvtxt[i].replace(/"/g, ""))
+        logger.write("\n")
+    }
+    return partCsvtxt
+}
 // opens database. Create new one if it doesn't exist
 // in: file (string, name of file)
 //     source (string, "corema" or "musit", indicates which database the data comes from)
@@ -22,7 +47,7 @@ const outfilePath = './../../test/src/data/nhm/'
 //     collection (string, name of collection)
 // out: a sqlite database-object
 async function createDatabase(file, source, mainTable, collection) {
-    // if database does not exist. This is not tested for a while, and not on server        
+    // if database does not exist. This is not tested for a while, and not on server      
     if (!fs.existsSync(file)) {
         db = new sqlite3.Database(file)
         fs.openSync(file, "w");
@@ -36,7 +61,7 @@ async function createDatabase(file, source, mainTable, collection) {
                     .run("CREATE TABLE preservation ( coreid TEXT, preservationType TEXT )")
                     .run("CREATE TABLE resourcerelationship ( coreid TEXT, relatedResourceID TEXT, relationshipOfResource TEXT, relationshipAccordingTo TEXT, relationshipEstablishedDate TEXT, relationshipRemarks TEXT , cleanCatalogNumberRecRel INTEGER, relCollectionCode TEXT)")
                     .run("CREATE TABLE simpledwc ( id TEXT, type TEXT, modified TEXT, rightsHolder TEXT, accessRights TEXT, collectionID TEXT, datasetID TEXT, institutionCode TEXT, collectionCode TEXT, ownerInstitutionCode TEXT, basisOfRecord TEXT, informationWithheld TEXT, occurrenceID TEXT, catalogNumber TEXT, recordNumber TEXT, recordedBy TEXT, sex TEXT, lifeStage TEXT, preparations TEXT, disposition TEXT, associatedMedia TEXT, organismID TEXT, materialSampleID TEXT, eventDate TEXT, country TEXT, stateProvince TEXT, county TEXT, locality TEXT, minimumElevationInMeters TEXT, decimalLatitude TEXT, decimalLongitude TEXT, identificationQualifier TEXT, identifiedBy TEXT, dateIdentified TEXT, scientificName TEXT, 'order' TEXT, family TEXT, genus TEXT, specificEpithet TEXT, infraspecificEpithet TEXT, taxonRank TEXT, scientificNameAuthorship TEXT, typeStatus TEXT , cleanCatalogNumber INTEGER)")
-                    .run(`CREATE TABLE ${mainTable} ( modified TEXT, institutionCode TEXT, collectionCode TEXT, basisOfRecord TEXT, catalogNumber TEXT, scientificName TEXT, scientificNameAuthorship TEXT, kingdom TEXT, phylum TEXT, class TEXT, 'order' TEXT, family TEXT, genus TEXT, specificEpithet TEXT, infraspecificEpithet TEXT, identifiedBy TEXT, dateIdentified TEXT, typeStatus TEXT, recordNumber TEXT, fieldNumber TEXT, recordedBy TEXT, eventDate TEXT, continent TEXT, country TEXT, stateProvince TEXT, county TEXT, locality TEXT, decimalLongitude TEXT, decimalLatitude TEXT, coordinateUncertaintyInMeters TEXT, verbatimElevation TEXT, verbatimDepth TEXT, sex TEXT, lifeStage TEXT, preparations TEXT, individualCount TEXT, otherCatalogNumbers TEXT, occurrenceRemarks TEXT, samplingProtocol TEXT, identificationRemarks TEXT, habitat TEXT, associatedTaxa TEXT, georeferenceRemarks TEXT, verbatimCoordinates TEXT, verbatimSRS TEXT, associatedMedia TEXT, CreativeCommonsLicense TEXT, ArtObsID TEXT, occurrenceID TEXT, UTMsone TEXT, UTMX TEXT, UTMY TEXT, datasetName TEXT, createdDate TEXT, bioGeoRegion TEXT, recordedById TEXT, identifiedById TEXT , cleanCatalogNumber INTEGER)`)
+                    .run(`CREATE TABLE ${mainTable} ( modified TEXT, institutionCode TEXT, collectionCode TEXT, basisOfRecord TEXT, catalogNumber TEXT, scientificName TEXT, scientificNameAuthorship TEXT, kingdom TEXT, phylum TEXT, class TEXT, 'order' TEXT, family TEXT, genus TEXT, specificEpithet TEXT, infraspecificEpithet TEXT, identifiedBy TEXT, dateIdentified TEXT, typeStatus TEXT, recordNumber TEXT, fieldNumber TEXT, recordedBy TEXT, eventDate TEXT, continent TEXT, country TEXT, stateProvince TEXT, county TEXT, locality TEXT, decimalLongitude TEXT, decimalLatitude TEXT, coordinateUncertaintyInMeters TEXT, verbatimElevation TEXT, verbatimDepth TEXT, sex TEXT, lifeStage TEXT, preparations TEXT, individualCount TEXT, otherCatalogNumbers TEXT, occurrenceRemarks TEXT, samplingProtocol TEXT, identificationQualifier TEXT, habitat TEXT, associatedTaxa TEXT, georeferenceRemarks TEXT, verbatimCoordinates TEXT, verbatimSRS TEXT, associatedMedia TEXT, CreativeCommonsLicense TEXT, ArtObsID TEXT, occurrenceID TEXT, UTMsone TEXT, UTMX TEXT, UTMY TEXT, datasetName TEXT, createdDate TEXT, bioGeoRegion TEXT, recordedById TEXT, identifiedById TEXT , cleanCatalogNumber INTEGER)`)
             })
         } else if (source === "corema") {
             db.serialize(function () {
@@ -54,7 +79,8 @@ async function createDatabase(file, source, mainTable, collection) {
     // if database exist, but we are working with fungi og lichens: create new main-table. I am not sure of status for this July 2022
     } else if (mainTable === "fungus_o" || mainTable === "fungus_lichens_o" || mainTable === "lichens_o") {
         db = new sqlite3.Database(file)
-        db.run(`CREATE TABLE IF NOT EXISTS ${mainTable} ( modified TEXT, institutionCode TEXT, collectionCode TEXT, basisOfRecord TEXT, catalogNumber TEXT, scientificName TEXT, scientificNameAuthorship TEXT, kingdom TEXT, phylum TEXT, class TEXT, 'order' TEXT, family TEXT, genus TEXT, specificEpithet TEXT, infraspecificEpithet TEXT, identifiedBy TEXT, dateIdentified TEXT, typeStatus TEXT, recordNumber TEXT, fieldNumber TEXT, recordedBy TEXT, eventDate TEXT, continent TEXT, country TEXT, stateProvince TEXT, county TEXT, locality TEXT, decimalLongitude TEXT, decimalLatitude TEXT, coordinateUncertaintyInMeters TEXT, verbatimElevation TEXT, verbatimDepth TEXT, sex TEXT, lifeStage TEXT, preparations TEXT, individualCount TEXT, otherCatalogNumbers TEXT, occurrenceRemarks TEXT, samplingProtocol TEXT, identificationRemarks TEXT, habitat TEXT, associatedTaxa TEXT, georeferenceRemarks TEXT, verbatimCoordinates TEXT, verbatimSRS TEXT, associatedMedia TEXT, CreativeCommonsLicense TEXT, ArtObsID TEXT, occurrenceID TEXT, UTMsone TEXT, UTMX TEXT, UTMY TEXT, datasetName TEXT, createdDate TEXT, bioGeoRegion TEXT, recordedById TEXT, identifiedById TEXT , cleanCatalogNumber INTEGER)`)
+        db.run(`CREATE TABLE IF NOT EXISTS ${mainTable} ( modified TEXT, institutionCode TEXT, collectionCode TEXT, basisOfRecord TEXT, catalogNumber TEXT, scientificName TEXT, scientificNameAuthorship TEXT, kingdom TEXT, phylum TEXT, class TEXT, 'order' TEXT, family TEXT, genus TEXT, specificEpithet TEXT, infraspecificEpithet TEXT, identifiedBy TEXT, dateIdentified TEXT, typeStatus TEXT, recordNumber TEXT, fieldNumber TEXT, recordedBy TEXT, eventDate TEXT, continent TEXT, country TEXT, stateProvince TEXT, county TEXT, locality TEXT, decimalLongitude TEXT, decimalLatitude TEXT, coordinateUncertaintyInMeters TEXT, verbatimElevation TEXT, verbatimDepth TEXT, sex TEXT, lifeStage TEXT, preparations TEXT, individualCount TEXT, otherCatalogNumbers TEXT, occurrenceRemarks TEXT, samplingProtocol TEXT, identificationQualifier TEXT, habitat TEXT, associatedTaxa TEXT, georeferenceRemarks TEXT, verbatimCoordinates TEXT, verbatimSRS TEXT, associatedMedia TEXT, CreativeCommonsLicense TEXT, ArtObsID TEXT, occurrenceID TEXT, UTMsone TEXT, UTMX TEXT, UTMY TEXT, datasetName TEXT, createdDate TEXT, bioGeoRegion TEXT, recordedById TEXT, identifiedById TEXT , cleanCatalogNumber INTEGER)`)
+         
         return db
     // database exist, we just open it
     } else {
@@ -117,31 +143,34 @@ async function makeNewMycFile() {
 
 // finds latest time of change in record in table
 // reads dumpfile, singels out records with newer modified-times and puts them into new file
-// to be used in fillTable
 // in: db (string, name of sqlite-database)
 //     tableName (string, name of table in sqlite-database)
 //     dumpFolder (string, name of folder with musit-dump-files)
 //     source (string, "musit" or "corema")
 // out: txt-file with only records that where modified since last time
-/////// await makeFileOnlyNew(db, 'fungus_o', 'fungus_o', 'musit')
+// is called in runMusitCoremaStitch() and runCoremaStitch()
 async function makeFileOnlyNew(db, tableName, dumpFolder, source) {
     return new Promise(function (resolve, reject) {
         let pathToFolder
         if (source === "corema") { pathToFolder = pathToCoremaDumpsForPortal }
         else if (source === "musit") { pathToFolder = pathToMusitDumps }
-        console.log('linje 131 ' + pathToFolder)
-        console.log(tableName)
         // db.serialize(() => { // måtta ha med denne på coremastitch - men ikke på musitstitch?
         db.all(`SELECT MAX(modified) AS date FROM ${tableName}`, (err, latestModified) => {
             if (err) { console.log(err.message) }
-            console.log(latestModified[0].date + ' linje 135')
             let newFileRows = []
+            const date = new Date()
+            let dateOneYearAgo =  `${date.getFullYear() - 1}-${date.getMonth() + 1}-${date.getDate()}`
             fs.createReadStream(`${pathToFolder}${dumpFolder}/${tableName}.txt`)
                 .pipe(csvParser({ "separator": "\t" }))
                 .on('data', (row) => {
+                    // new code 18.8.23
+                    // check if row's catalognumber is in database - if it is from the last year 
+                    // this to catch records that were created before lastestModified.date, but were made public later
+                    // if (row.modified > dateOneYearAgo) {
+
+                    // }
                     
                     if (latestModified[0].date < row.modified) {
-                    
                         newFileRows.push(row)
                     }
                 }).on('end', () => {
@@ -216,9 +245,9 @@ async function changeEncoding(infile) {
     }
 }
 
-// fills table in database (after data has been removed)
+// fills table in database (either deleting records to be updated, and then update, or fill entire table after data has been removed)
 // in: db (sqlite-database containing one organismgroup)
-//     tableName (string, name of table to be deleted in database)
+//     tableName (string, name of table to fill data into)
 //     filename (string, name of dumpfile where data is fetched)
 async function fillTable(db, tablename, filename, update) {
     return new Promise(function (resolve, reject) {
@@ -232,13 +261,17 @@ async function fillTable(db, tablename, filename, update) {
                     .on('data', (row) => {
                         if (!filename.includes('corema')) {  // i.e. musitfile. if-statement only works because the corema-files lie in a folder named smth with "corema", so "corema" is in the file-path   
                             db.serialize(() => {
-                                if (update === 'update') { db.run(`DELETE FROM ${tablename} WHERE catalogNumber = "${row.catalogNumber}"`) }
+                                let indexOfDash // I used this in line 268, but removed it, don't remember why. as of june -23, is not used
+                                if (row.catalogNumber.indexOf('/')) {indexOfDash = row.catalogNumber.indexOf('/')} else { indexOfDash = row.catalogNumber.length}
+                                if (update === 'update') { 
+                                    db.run(`DELETE FROM ${tablename} WHERE catalogNumber = "${row.catalogNumber}"`) 
+                                }
                                 db.prepare(`INSERT INTO ${tablename} (modified, institutionCode, collectionCode, basisOfRecord, catalogNumber, scientificName, scientificNameAuthorship, kingdom, phylum, class, "order", family, genus, specificEpithet, identifiedBy, dateIdentified, typeStatus, recordNumber,
-                                fieldNumber, recordedBy, eventDate, continent, country, stateProvince, county, locality, decimalLongitude, decimalLatitude, coordinateUncertaintyInMeters, verbatimElevation, verbatimDepth, sex, lifeStage, preparations,individualCount, otherCatalogNumbers, occurrenceRemarks, samplingProtocol, identificationRemarks,
+                                fieldNumber, recordedBy, eventDate, continent, country, stateProvince, county, locality, decimalLongitude, decimalLatitude, coordinateUncertaintyInMeters, verbatimElevation, verbatimDepth, sex, lifeStage, preparations,individualCount, otherCatalogNumbers, occurrenceRemarks, samplingProtocol, identificationQualifier,
                                 habitat, associatedTaxa, georeferenceRemarks, verbatimCoordinates, verbatimSRS, associatedMedia, CreativeCommonsLicense, ArtObsID, occurrenceID, UTMsone, UTMX, UTMY, datasetName, createdDate, bioGeoRegion, recordedById, identifiedById) 
                                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-                                .run(row.modified, row.institutionCode, row.collectionCode, row.basisOfRecord, row.catalogNumber, row.scientificName, row.scientificNameAuthorship, row.kingdom, row.phylum, row.class, row.order, row.family, row.genus, row.specificEpithet, row.identifiedBy, row.dateIdentified, row.typeStatus, row.recordNumber,
-                                row.fieldNumber, row.recordedBy, row.eventDate, row.continent, row.country, row.stateProvince, row.county, row.locality, row.decimalLongitude, row.decimalLatitude, row.coordinateUncertaintyInMeters, row.verbatimElevation, row.verbatimDepth, row.sex, row.lifeStage, row.preparations, row.individualCount, row.otherCatalogNumbers, row.occurrenceRemarks, row.samplingProtocol, row.identificationRemarks,
+                                .run(row.modified, row.institutionCode, row.collectionCode, row.basisOfRecord, row.catalogNumber/*.substring(0,indexOfDash)*/, row.scientificName, row.scientificNameAuthorship, row.kingdom, row.phylum, row.class, row.order, row.family, row.genus, row.specificEpithet, row.identifiedBy, row.dateIdentified, row.typeStatus, row.recordNumber,
+                                row.fieldNumber, row.recordedBy, row.eventDate, row.continent, row.country, row.stateProvince, row.county, row.locality, row.decimalLongitude, row.decimalLatitude, row.coordinateUncertaintyInMeters, row.verbatimElevation, row.verbatimDepth, row.sex, row.lifeStage, row.preparations, row.individualCount, row.otherCatalogNumbers, row.occurrenceRemarks, row.samplingProtocol, row.identificationQualifier,
                                 row.habitat, row.associatedTaxa, row.georeferenceRemarks, row.verbatimCoordinates, row.verbatimSRS, row.associatedMedia, row.CreativeCommonsLicense, row.ArtObsID, row.occurrenceID, row.UTMsone, row.UTMX, row.UTMY, row.datasetName, row.createdDate, row.bioGeoRegion, row.recordedById, row.identifiedById)
                             })
                         } else if (tablename == 'amplification') {
@@ -323,7 +356,7 @@ const createViewMusitRel = (musitFile, double) => {
                 ${musitFile}.genus,
                 ${musitFile}.specificEpithet,
                 ${musitFile}.infraspecificEpithet,
-                ${musitFile}.identificationRemarks,
+                ${musitFile}.identificationQualifier,
                 ${musitFile}.identifiedBy,
                 ${musitFile}.dateIdentified,
                 ${musitFile}.typeStatus,
@@ -373,7 +406,7 @@ const createViewCoremaFields = () => {
     simpledwc.minimumElevationInMeters,
     simpledwc.decimalLatitude,
     simpledwc.decimalLongitude,
-    simpledwc.identificationQualifier AS identificationRemarks,
+    simpledwc.identificationQualifier,
     simpledwc.typeStatus,
     simpledwc.identifiedBy,
     simpledwc.dateIdentified,
@@ -415,7 +448,7 @@ musitRel.genus,
 musitRel.specificEpithet,
 musitRel.infraspecificEpithet,
 musitRel.identifiedBy,
-musitRel.identificationRemarks,
+musitRel.identificationQualifier,
 musitRel.dateIdentified,
 musitRel.typeStatus,
 musitRel.recordNumber,
@@ -457,7 +490,7 @@ coremaFields.locality AS coremaLocality,
 coremaFields.minimumElevationInMeters AS coremaElevation,
 coremaFields.decimalLatitude AS coremaLat,
 coremaFields.decimalLongitude AS coremaLong,
-coremaFields.identificationRemarks AS coremaIdentificationRemarks,
+coremaFields.identificationQualifier AS coremaIdentificationQualifier,
 coremaFields.typeStatus AS coremaTypeStatus,
 coremaFields.identifiedBy AS coremaIdentifiedBy,
 coremaFields.dateIdentified AS coremaDateIdentified,
@@ -470,13 +503,89 @@ LEFT JOIN coremaFields ON musitRel.coreid = coremaFields.itemID
 
 ORDER BY organismID ASC`
 
+function dbSelectFunction (start,end) {
+    const shortMusitSelect = `SELECT 
+    musitRel.basisOfRecord,
+    musitRel.catalogNumber,
+    musitRel.scientificName,
+    musitRel.institutionCode,
+    musitRel.collectionCode,
+    musitRel.scientificName,
+    musitRel.scientificNameAuthorship,
+    musitRel.kingdom,
+    musitRel.phylum,
+    musitRel.class,
+    musitRel."order",
+    musitRel.family,
+    musitRel.genus,
+    musitRel.specificEpithet,
+    musitRel.infraspecificEpithet,
+    musitRel.identifiedBy,
+    musitRel.identificationQualifier,
+    musitRel.dateIdentified,
+    musitRel.typeStatus,
+    musitRel.recordNumber,
+    musitRel.fieldNumber,
+    musitRel.recordedBy,
+    musitRel.eventDate,
+    musitRel.continent,
+    musitRel.country,
+    musitRel.stateProvince,
+    musitRel.county,
+    musitRel.locality,
+    musitRel.decimalLongitude,
+    musitRel.decimalLatitude,
+    musitRel.coordinateUncertaintyInMeters,
+    musitRel.verbatimElevation,
+    musitRel.verbatimDepth,
+    musitRel.habitat,
+    musitRel.associatedMedia,
+    musitRel.CreativeCommonsLicense,
+    musitRel.ArtObsID,
+    musitRel.relatedResourceID,
+    musitRel.coreid,
+    musitRel.modified AS musitModified,
+    coremaFields.itemID, organismID, coremaFields.fullCatalogNumber AS RelCatNo, coremaFields.catalogNumber AS RelCleanCatNo, rightsHolder, coremaFields.basisOfRecord AS coremaBasisOfRecord, informationWithheld, coremaFields.preparations, coremaFields.materialSampleType,
+    coremaFields.modified AS coremaModified,
+    
+    preservationType,
+    preparationType, preparationMaterials, preparedBy, preparationDate,
+    geneticAccessionNumber, BOLDProcessID,
+    concentration, concentrationUnit,
+    
+    coremaFields.recordNumber AS coremaRecordNumber,
+    coremaFields.recordedBy AS coremaRecordedBy,
+    coremaFields.eventDate AS coremaEventDate,
+    coremaFields.country AS coremaCountry,
+    coremaFields.stateProvince AS coremaProvince,
+    coremaFields.county AS coremaCounty,
+    coremaFields.locality AS coremaLocality,
+    coremaFields.minimumElevationInMeters AS coremaElevation,
+    coremaFields.decimalLatitude AS coremaLat,
+    coremaFields.decimalLongitude AS coremaLong,
+coremaFields.identificationQualifier AS coremaIdentificationQualifier,
+    coremaFields.typeStatus AS coremaTypeStatus,
+    coremaFields.identifiedBy AS coremaIdentifiedBy,
+    coremaFields.dateIdentified AS coremaDateIdentified,
+    coremaFields.scientificName AS coremaScientificName,
+    coremaFields.genus AS coremaGenus,
+    coremaFields.specificEpithet AS coremaSpecificEpithet
+    
+    FROM musitRel
+    LEFT JOIN coremaFields ON musitRel.coreid = coremaFields.itemID
+    WHERE musitRel.catalogNumber > ${start} AND musitRel.catalogNumber < ${end}
+    
+    ORDER BY organismID ASC`
+    return shortMusitSelect
+    
+}
 
 // sqlite-select coremadata adding musitdata
 const coremaSelectWithMusit = `SELECT 
 coremaFields.itemID, coremaFields.organismID, coremaFields.institutionCode, coremaFields.collectionCode, coremaFields.fullCatalogNumber, coremaFields.catalogNumber, coremaFields.rightsHolder, coremaFields.informationWithheld, coremaFields.basisOfRecord,
 coremaFields.recordedBy, coremaFields.preparations,  coremaFields.eventDate, 
 coremaFields.country, coremaFields.stateProvince, coremaFields.county, coremaFields.locality, 
-coremaFields.decimalLatitude, coremaFields.decimalLongitude, coremaFields.identificationRemarks, coremaFields.typeStatus,
+coremaFields.decimalLatitude, coremaFields.decimalLongitude, coremaFields.identificationQualifier, coremaFields.typeStatus,
 coremaFields.identifiedBy,coremaFields.dateIdentified, coremaFields.scientificName, coremaFields."order", coremaFields.family, coremaFields.genus, coremaFields.specificEpithet,
 coremaFields.infraspecificEpithet, coremaFields.scientificNameAuthorship,
 coremaFields.preservationType,
@@ -496,10 +605,10 @@ FROM coremaFields
 LEFT JOIN musitRel ON coremaFields.itemID = musitRel.coreid
 ORDER BY organismID ASC`
 
-// sqlite-seelct coremadata where there no musitdata
+// sqlite-select coremadata where there no musitdata
 const coremaSelect = `SELECT 
 simpledwc.occurrenceID as itemID, organismID, materialSampleID, institutionCode, collectionCode, catalogNumber AS fullCatalogNumber, cleanCatalogNumber AS catalogNumber, rightsHolder, basisOfRecord AS coremaBasisOfRecord, informationWithheld, recordedBy, sex, lifeStage, preparations, disposition, eventDate, country, stateProvince,
-    county, locality, minimumElevationInMeters, decimalLatitude, decimalLongitude, identificationQualifier as identificationRemarks, identifiedBy, dateIdentified, typeStatus, scientificName, "order", family, genus, specificEpithet, infraspecificEpithet, taxonRank, scientificNameAuthorship,
+    county, locality, minimumElevationInMeters, decimalLatitude, decimalLongitude, identificationQualifier, identifiedBy, dateIdentified, typeStatus, scientificName, "order", family, genus, specificEpithet, infraspecificEpithet, taxonRank, scientificNameAuthorship,
     preservationType,
 
     preparationType, preparationMaterials, preparedBy, preparationDate,
@@ -748,9 +857,11 @@ const removeCoremaDuplicates = (processedRows) => {
     return processedRows
 }
 
-
+// is called in runMusitCoremaStitch(9)
 function mapElementToColumns(fieldNames) {
     return function (element) {
+        // field names = headere
+        // The map() method creates a new array populated with the results of calling a provided function on every element in the calling array.
         let fields = fieldNames.map(n => element[n] ? JSON.stringify(element[n]) : '""')
         return fields.join('\t')
     }
@@ -845,10 +956,8 @@ async function runCoremaStitch(collection, coremaFile, coremaFolder, outfile, up
                     // if object exist in array, transform (or add) relevant properties to arrays in that object, and add item-info to object
                     let processedRows = []
                     let existingRow = 'nothing'
+                    console.log(rows.length + ' lengde')
                     for (i = 0; i < rows.length; i++) {
-                        // if (rows[i].catalogNumber === 275) {
-                        //     console.log(rows[i])
-                        // }
                         if (i == rows.length - 1) { // we reached the end of the file
                             if (existingRow != 'nothing') {
                                 processedRows.push(existingRow)
@@ -859,6 +968,7 @@ async function runCoremaStitch(collection, coremaFile, coremaFolder, outfile, up
 
                         } else if (rows[i].organismID != null) {
                             if (rows[i].organismID === rows[i + 1].organismID) { // next line is item of same organism
+                                
                                 if (existingRow === 'nothing') { // if this is the first line for this object
                                     rows[i].fullCatalogNumber = [rows[i].fullCatalogNumber]
                                     rows[i].preservationType = [rows[i].preservationType]
@@ -874,89 +984,102 @@ async function runCoremaStitch(collection, coremaFile, coremaFolder, outfile, up
                                     rows[i].concentrationUnit = [rows[i].concentrationUnit]
                                     rows[i].associatedMedia = [rows[i].associatedMedia]
                                     existingRow = rows[i]
-                                } else { // second or higher number of items for one organism
-                                    if (rows[i].associatedMedia) {
-                                        if (!existingRow.associatedMedia.includes(rows[i].associatedMedia) ) {
-                                            existingRow.associatedMedia.push(rows[i].associatedMedia)
+                                } else { // second or higher number of items (or of same item) for one organism
+                                        if (rows[i].associatedMedia) {
+                                            if (!existingRow.associatedMedia.includes(rows[i].associatedMedia) ) {
+                                                existingRow.associatedMedia.push(rows[i].associatedMedia)
+                                            }    
+                                        }
+                                        // existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
+                                        // existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
+                                        // if (rows[i].geneticAccessionNumber) {
+                                        //     if (!existingRow.geneticAccessionNumber.includes(rows[i].geneticAccessionNumber) ) {
+                                        //         existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
+                                        //     }
+                                        // }
+                                        // if (rows[i].BOLDProcessID) {
+                                        //     if (!existingRow.BOLDProcessID.includes(rows[i].BOLDProcessID) ) {
+                                        //         existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
+                                        //     }
+                                        // }
+                                    // is this next line a new item 
+                                    if (!existingRow.fullCatalogNumber.includes(rows[i].fullCatalogNumber)) {
+                                        // this row is an actual new item
+                                        existingRow.fullCatalogNumber.push(rows[i].fullCatalogNumber)
+                                        existingRow.preservationType.push(rows[i].preservationType)
+                                        if (!rows[i].preparationType) { rows[i].preparationType = rows[i].coremaBasisOfRecord }
+                                        existingRow.preparationType.push(rows[i].preparationType)
+                                        existingRow.preparationMaterials.push(rows[i].preparationMaterials)
+                                        existingRow.preparedBy.push(rows[i].preparedBy)
+                                        existingRow.preparationDate.push(rows[i].preparationDate)
+                                        existingRow.materialSampleType.push(rows[i].materialSampleType)
+                                        existingRow.concentration.push(rows[i].concentration)
+                                        existingRow.concentrationUnit.push(rows[i].concentrationUnit)
+                                        existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
+                                        existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
+                                    } else { // same item as prev. row. always?
+                                        if (!Array.isArray(existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1])) { // turn genAccNo for this item into array, and add genAccno
+                                            existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1] = [existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1]]
+                                            existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1].push(rows[i].geneticAccessionNumber)
+                                        } else {
+                                            existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1].push(rows[i].geneticAccessionNumber)
+                                        }
+                                        if (!Array.isArray(existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1])) { // turn genAccNo for this item into array, and add genAccno
+                                            existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1] = [existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1]]
+                                            existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1].push(rows[i].BOLDProcessID)
+                                        } else {
+                                            existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1].push(rows[i].BOLDProcessID)
                                         }
                                     }
-                                    if (!existingRow.fullCatalogNumber.includes(rows[i].fullCatalogNumber)) {
-                                        existingRow.fullCatalogNumber.push(rows[i].fullCatalogNumber)
-                                    }
-                                    // if (!existingRow.preservationType.includes(rows[i].preservationType)) {
-                                        existingRow.preservationType.push(rows[i].preservationType)
-                                    // }
-                                    if (!rows[i].preparationType) { rows[i].preparationType = rows[i].coremaBasisOfRecord }
-                                    // if (!existingRow.preparationType.includes(rows[i].preparationType)){
-                                        existingRow.preparationType.push(rows[i].preparationType)
-                                    // }
-                                    // if (!existingRow.preparationMaterials.includes(rows[i].preparationMaterials)){
-                                        existingRow.preparationMaterials.push(rows[i].preparationMaterials)
-                                    // }
-                                    // if (!existingRow.preparedBy.includes(rows[i].preparedBy)){
-                                        existingRow.preparedBy.push(rows[i].preparedBy)
-                                    // }
-                                    // if (!existingRow.preparationDate.includes(rows[i].preparationDate)){
-                                        existingRow.preparationDate.push(rows[i].preparationDate)
-                                    // }
-                                    // if (!existingRow.materialSampleType.includes(rows[i].materialSampleType)){
-                                        existingRow.materialSampleType.push(rows[i].materialSampleType)
-                                    // }
-                                    // if (!existingRow.geneticAccessionNumber.includes(rows[i].geneticAccessionNumber)){
-                                        existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
-                                    // }
-                                    // if (!existingRow.BOLDProcessID.includes(rows[i].BOLDProcessID)){
-                                        existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
-                                    // }
-                                    // if (!existingRow.concentration.includes(rows[i].concentration)){
-                                        existingRow.concentration.push(rows[i].concentration)
-                                    // }
-                                    // if (!existingRow.concentrationUnit.includes(rows[i].concentrationUnit)){
-                                        existingRow.concentrationUnit.push(rows[i].concentrationUnit)
-                                    // }
+                                    
                                 }
                             } else { // next line is not the same organism
                                 if (existingRow != 'nothing') { // previous line(s) are items of same organism as this, and this is the last item
+                                    
                                     if (rows[i].associatedMedia) {
                                         if (!existingRow.associatedMedia.includes(rows[i].associatedMedia) ) {
                                             existingRow.associatedMedia.push(rows[i].associatedMedia)
-                                        }
+                                        }    
                                     }
+                                    // if (rows[i].geneticAccessionNumber) {
+                                    //     if (!existingRow.geneticAccessionNumber.includes(rows[i].geneticAccessionNumber) ) {
+                                            // existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
+                                    //     }
+                                    // }
+                                    // if (rows[i].BOLDProcessID) {
+                                    //     if (!existingRow.BOLDProcessID.includes(rows[i].BOLDProcessID) ) {
+                                            // existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
+                                    //     }
+                                    // }
+                                    // it is actually a new item
                                     if (!existingRow.fullCatalogNumber.includes(rows[i].fullCatalogNumber)) {
                                         existingRow.fullCatalogNumber.push(rows[i].fullCatalogNumber)
-                                    }
-                                    // if (!existingRow.preservationType.includes(rows[i].preservationType)) {
                                         existingRow.preservationType.push(rows[i].preservationType)
-                                    // }
-                                    if (!rows[i].preparationType) { rows[i].preparationType = rows[i].coremaBasisOfRecord }
-                                    // if (!existingRow.preparationType.includes(rows[i].preparationType)){
+                                        if (!rows[i].preparationType) { rows[i].preparationType = rows[i].coremaBasisOfRecord }
                                         existingRow.preparationType.push(rows[i].preparationType)
-                                    // }
-                                    // if (!existingRow.preparationMaterials.includes(rows[i].preparationMaterials)){
                                         existingRow.preparationMaterials.push(rows[i].preparationMaterials)
-                                    // }
-                                    // if (!existingRow.preparedBy.includes(rows[i].preparedBy)){
                                         existingRow.preparedBy.push(rows[i].preparedBy)
-                                    // }
-                                    // if (!existingRow.preparationDate.includes(rows[i].preparationDate)){
                                         existingRow.preparationDate.push(rows[i].preparationDate)
-                                    // }
-                                    // if (!existingRow.materialSampleType.includes(rows[i].materialSampleType)){
                                         existingRow.materialSampleType.push(rows[i].materialSampleType)
-                                    // }
-                                    // if (!existingRow.geneticAccessionNumber.includes(rows[i].geneticAccessionNumber)){
-                                        existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
-                                    // }
-                                    // if (!existingRow.BOLDProcessID.includes(rows[i].BOLDProcessID)){
-                                        existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
-                                    // }
-                                    // if (!existingRow.concentration.includes(rows[i].concentration)){
                                         existingRow.concentration.push(rows[i].concentration)
-                                    // }
-                                    // if (!existingRow.concentrationUnit.includes(rows[i].concentrationUnit)){
                                         existingRow.concentrationUnit.push(rows[i].concentrationUnit)
-                                    // }
-                                
+                                        existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
+                                        existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
+                                    } else { // same item as prev. row. always?
+                                        if (!Array.isArray(existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1])) { // turn genAccNo for this item into array, and add genAccno
+                                            existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1] = [existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1]]
+                                            existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1].push(rows[i].geneticAccessionNumber)
+                                        } else {
+                                            existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1].push(rows[i].geneticAccessionNumber)
+                                        }
+                                        if (!Array.isArray(existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1])) { // turn genAccNo for this item into array, and add genAccno
+                                            existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1] = [existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1]]
+                                            existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1].push(rows[i].BOLDProcessID)
+                                        } else {
+                                            existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1].push(rows[i].BOLDProcessID)
+                                        }
+                                    }
+                                    if (existingRow.catalogNumber === 55953) {console.log(existingRow)}
                                     existingRow.fullCatalogNumber = existingRow.fullCatalogNumber.join(' | ')
                                     existingRow.preservationType = existingRow.preservationType.join(' | ')
                                     existingRow.preparationType = existingRow.preparationType.join(' | ')
@@ -971,7 +1094,7 @@ async function runCoremaStitch(collection, coremaFile, coremaFolder, outfile, up
                                     existingRow.associatedMedia = existingRow.associatedMedia.join(' | ')
                                     processedRows.push(existingRow)
                                     existingRow = 'nothing'
-                                } else {
+                                } else { // what is this?
                                     if (!rows[i].preparationType) { rows[i].preparationType = rows[i].coremaBasisOfRecord }
                                     processedRows.push(rows[i])
                                 }
@@ -1018,8 +1141,17 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     await changeEncoding(`${pathToMusitDumps}${musitFile}/${musitFile}.txt`)
     
     let dbSelect
+    let dbSelect2
+    let dbSelect3
+    let dbSelect4
     if (basedOn === 'corema') {
         dbSelect = coremaSelectWithMusit 
+    } else if (collection === 'vascular' || collection === "entomology") {
+        
+        dbSelect = dbSelectFunction('0','250001')
+        dbSelect2 = dbSelectFunction('250000','500001')
+        dbSelect3 = dbSelectFunction('500000','1000001')
+        dbSelect4 = dbSelectFunction('1000000','3000000')
     } else { 
         dbSelect = musitSelect 
     }
@@ -1036,6 +1168,7 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
 
     let fileSuffix = ''
     // make new dumpfiles with only records that have been changed since last time
+    console.log(update)
     if (update === 'update') {
         await makeFileOnlyNew(db, musitFile, musitFile, 'musit')
         await makeFileOnlyNew(db, 'simpledwc', coremaFolder, 'corema')
@@ -1120,8 +1253,14 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     existingLastModified = await findLastModified(db, musitFile)
     console.log(existingLastModified + ' linje 1104')
     
+    outfile = outfilePath + outfile
+    // let logger = fs.createWriteStream(outfile, {
+    //     flags: 'a' // means append
+    // })
+
     return new Promise(function (resolve, reject) { // if we use promise, we cannot use await inside
         db.serialize(() => {
+            
             // remove from resourcerelationship entries other than musit-regno-connections
             // db.run(`DELETE FROM resourcerelationship
             // WHERE SUBSTR (relatedResourceID,13,${length}) != '${prefix}';`)
@@ -1140,127 +1279,88 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
             .run(`DROP VIEW IF EXISTS coremaFields`)
             // create view with all corema-fields in one table
             .run(createViewCoremaFields())
+
             db.all(dbSelect, (err, rows) => {
                 if (err) {
+                    console.log('error')
                     console.error(err.message)
                 }
-                console.log('before making items into arrays: ' + rows.length)
-                numberone = rows.filter(el => el.catalogNumber === 5)
-                console.log(numberone)
-                
+                let phloeomanna = rows.find(el => el.catalogNumber === '245548')
+                console.log(phloeomanna)
+                console.log('length rows round 1 ' + rows.length)
                 processedRows = itemToArraysOnSameLine(rows, basedOn)
-                // numberOne = processedRows.filter(el => el.catalogNumber === 1)
-                // console.log(numberOne)
                 rows.length = 0
                 console.log('after putting items into arrays: ' + processedRows.length)
                 removeCoremaDuplicates(processedRows)
                 console.log('after removing corema-duplicates of musitentries: ' + processedRows.length)
-                outfile = outfilePath + outfile
+              
                 
                 let fieldNames = Object.keys(processedRows[0]) //new
-                console.log('nå kommer mapping')
-                let csvtxt = processedRows.map(mapElementToColumns(fieldNames)) 
-                console.log('nå kommer unshift')
-                processedRows.length = 0 // sorted in stead of processed
-                csvtxt.unshift(fieldNames.join('\t'))
-                fs.writeFileSync(outfile, csvtxt[0])
-
-                console.log("array length: " + csvtxt.length)
-
+                fs.writeFileSync(outfile, fieldNames.join('\t'))
+                // let logger = fs.createWriteStream(outfile, {
+                //     flags: 'a' // means append
+                // })
+                // logger.write("\n")
+                fs.appendFileSync(outfile,"\n")
                 
-                let logger = fs.createWriteStream(outfile, {
-                    flags: 'a' // means append
-                })
-                const  array_to_file = (subArray) => {
-                    console.log("array_to_file starts")
-                    for (let i = 0; i<subArray.length; i++) {
-                        logger.write(subArray[i].replace(/"/g,""))
-                        logger.write("\n")
-                    }
-                }
+                let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
+                console.log("not too long: " + csvtxt.length)
+                array_to_file(outfile,csvtxt)
                 
-                // to fix problem that a too huge bulk of data cannot be written to .... at once?
-                if (csvtxt.length > 300000) {
-                    let nbFractions = csvtxt.length / 200000
-                    console.log("nb Fractions " + nbFractions)
-                    nbFractions = Math.ceil(nbFractions)
-                    console.log("rounded nbFractions " + nbFractions)
-                    let part = csvtxt.length / nbFractions
-                    part = Math.ceil(part)
-                    console.log("part: " + part)
-
-                    return new Promise(function (resolve, reject) {
-                        let firstCsvtxt = csvtxt.slice(0, part)
-                        for (let i = 0; i < firstCsvtxt.length; i++) {
-                            // writes to outfile:
-                            logger.write(firstCsvtxt[i].replace(/"/g, ""))
-                            logger.write("\n")
-                        }
-                        resolve(firstCsvtxt)
-
-                    }).then(function (result) {
-                        result.length = 0
-                        console.log('runde 2')
-                        console.log(result)
-                        let secondCsvtxt = csvtxt.slice(part, part * 2)
-                        for (let i = 0; i < secondCsvtxt.length; i++) {
-                            logger.write(secondCsvtxt[i].replace(/"/g, ""))
-                            logger.write("\n")
-                        }
-                        return secondCsvtxt
-                    }).then(function (result) {
-                        result.length = 0
-                        if (nbFractions > 2) {
-                            console.log('runde 3')
-                            let thirdCsvtxt = csvtxt.slice(part * 2, part * 3)
-                            for (let i = 0; i < thirdCsvtxt.length; i++) {
-                                if (i === 195883) { console.log('i = 195883') }
-                                logger.write(thirdCsvtxt[i].replace(/"/g, ""))
-                                logger.write("\n")
-                            }
-                            return thirdCsvtxt
-                        } else {
-                            return []
-                        }
-
-                    }).then(function (result) {
-                        result.length = 0
-                        if (nbFractions > 3) {
-                            let fourthCsvtxt = csvtxt.slice(part * 3, part * 4)
-                            console.log('runde 4')
-                            for (let i = 0; i < fourthCsvtxt.length; i++) {
-                                logger.write(fourthCsvtxt[i].replace(/"/g, ""))
-                                logger.write("\n")
-                            }
-                            return fourthCsvtxt
-                        } else {
-                            return []
-                        }
-
-
-                    }).then(function (result) {
-                        result.length = 0
-                        if (nbFractions > 4) {
-                            let fifthCsvtxt = csvtxt.slice(part * 4, part * 5)
-                            console.log('runde 5')
-                            for (let i = 0; i < fifthCsvtxt.length; i++) {
-                                logger.write(fifthCsvtxt[i].replace(/"/g, ""))
-                                logger.write("\n")
-                            }
-                            return fifthCsvtxt
-                        } else {
-                            return []
-                        }
-                    }).then(function (result) {
-                        result.length = 0
-                    })
-
-                } else {
-                    console.log("not too long: " + csvtxt.length)
-                    array_to_file(csvtxt)
-                }
-
             })
+            if (dbSelect2) {
+                db.all(dbSelect2, (err, rows) => {
+                    if (err) {
+                        console.error(err.message)
+                    }
+                    console.log('length rows round 2 ' + rows.length)
+                    processedRows = itemToArraysOnSameLine(rows, basedOn)
+                    rows.length = 0
+                    console.log('after putting items into arrays: ' + processedRows.length)
+                    removeCoremaDuplicates(processedRows)
+                    console.log('length after remove coremaduplicates ' + processedRows.length)
+                    let fieldNames = Object.keys(processedRows[0]) //new
+                    
+                   let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
+                    array_to_file(outfile,csvtxt)
+                })
+                db.all(dbSelect3, (err, rows) => {
+                    if (err) {
+                        console.error(err.message)
+                    }
+                    console.log('length rows round 3 ' + rows.length)
+                    processedRows = itemToArraysOnSameLine(rows, basedOn)
+                    rows.length = 0
+                    console.log('after putting items into arrays: ' + processedRows.length)
+                    removeCoremaDuplicates(processedRows)
+                    
+                    console.log('length after remove coremaduplicates ' + processedRows.length)
+                    if (processedRows[0]) {
+                        let fieldNames = Object.keys(processedRows[0]) //new
+                    
+                        let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
+                        array_to_file(outfile,csvtxt)
+                    }
+                    
+                })
+                db.all(dbSelect4, (err, rows) => {
+                    if (err) {
+                        console.error(err.message)
+                    }
+                    console.log('length rows round 4 ' + rows.length)
+                    processedRows = itemToArraysOnSameLine(rows, basedOn)
+                    rows.length = 0
+                    console.log('length after item to arrays on same line ' + processedRows.length)
+                    removeCoremaDuplicates(processedRows)
+                    console.log('length after remove coremaduplicates ' + processedRows.length)
+                    if (processedRows[0]) {
+                        let fieldNames = Object.keys(processedRows[0]) //new
+                        let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
+                        array_to_file(outfile,csvtxt)
+                    }
+                })
+            }
+            
         })
 
         db.close((err) => {
@@ -1275,41 +1375,29 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
 
 
 async function mainSQLiteFunction(update) {
-    //  await runCoremaStitch('birds', 'no_file', 'NHMO-BI','birds_stitched.txt', update)
-    // await runCoremaStitch('mammals','no_file', 'NHMO-DMA','mammals_stitched.txt', update)
-    // await runCoremaStitch('fish_herptiles','no_file', 'NHMO-DFH','dna_fish_herptiles_stitched.txt', update)
-    await runCoremaStitch('DNA_other','no_file', 'NHMO-DOT','dna_other_stitched.txt', update)
+     await runCoremaStitch('birds', 'no_file', 'NHMO-BI','birds_stitched.txt', update)
+     await runCoremaStitch('mammals','no_file', 'NHMO-DMA','mammals_stitched.txt', update)
+     await runCoremaStitch('fish_herptiles','no_file', 'NHMO-DFH','dna_fish_herptiles_stitched.txt', update)
+     await runCoremaStitch('DNA_other','no_file', 'NHMO-DOT','dna_other_stitched.txt', update)
 
-    // // // ///// from musit's point of view; all musits data, add from corema    
-    // await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit',update)
-    // await runMusitCoremaStitch('lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt', 'musit',update)
-    // await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','musit',update)
-    // await runMusitCoremaStitch('entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt', 'musit',update)
+    ///// from musit's point of view; all musits data, add from corema    
+    await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit',update)
+    await runMusitCoremaStitch('lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt', 'musit',update)
+    await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','musit',update)
+    await runMusitCoremaStitch('entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt', 'musit',update)
 
     // // ///// from coremas point of fiew; all corema data, add from musit    
-    // await runMusitCoremaStitch('fungi','fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema', update)
-    // await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema', update)
-    // await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema', update)
+    await runMusitCoremaStitch('fungi','fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema', update)
+    await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema', update)
+    await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema', update)
 }
 
 module.exports = {
     mainSQLiteFunction
 }
 
-let update
-update = 'update'
+// let update
+// update = 'update'
 // update = 'empty_fill'
-mainSQLiteFunction(update)
-// async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile, basedOn, update) {
+// mainSQLiteFunction(update)
 
-    
-    
-async function testMain () {
-    let dataBaseFile = `${pathToDatabases}lichens.db`
-    db = await createDatabase(dataBaseFile, "corema", 'lichens_o', 'lichens')
-    await fillTable(db, 'materialsample', `${pathToCoremaDumpsForPortal}O-DFL/materialsample.txt`,update)
-    
-
-}
-
-// testMain()
