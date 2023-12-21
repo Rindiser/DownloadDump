@@ -16,7 +16,8 @@ const fileListNbh = require('./../../test/src/utils/fileListNbh')
 
 const AbortController = require('abort-controller')
 const util = require('util')
-const AdmZip = require('adm-zip');
+const AdmZip = require('adm-zip')
+const inly = require('inly')
 const chalk = require('chalk');
 const streamPipeline = util.promisify(require('stream').pipeline)
 const mkdirp = require('mkdirp');
@@ -97,12 +98,28 @@ async function download (fileList, callback) {
         if (fileList[i].source == "musit") {
             // let fileName = './src/data/' + fileList[i].name + "_" + museum + '.zip'
             // let fileName = './data/' + fileList[i].zipFileName +  '.zip'
-            let fileName = './../../musitDumps/' + fileList[i].zipFileName +  '.zip'
+            let suffix
+            if (fileList[i].url.includes('zip')) {suffix = '.zip'} else if (fileList[i].url.includes('gz')) {suffix = '.gz'}
+            let fileName = './../../musitDumps/' + fileList[i].zipFileName +  suffix
             const response = await fetch(fileList[i].url, { signal: controller.signal })
             .then(response =>  streamPipeline(response.body, fs.createWriteStream(fileName)))
             .catch(err => console.log(chalk.red(err)))
             // reading archives
             try {
+                // if (fileList[i].url.includes('gz')) {
+                //     const extract = inly(fileName, './../../musitDumps/' + fileList[i].zipFileName)
+                //     // extract.on(fileName, (name) => {
+                //     //     console.log(name);
+                //     // })
+ 
+                //     // extract.on('error', (error) => {
+                //     //     console.error(error);
+                //     // });
+                    
+                //     // extract.on('end', () => {
+                //     //     console.log('done');
+                //     // });
+                // }
                 const zip = new AdmZip(fileName);
                 // extracts everything, overwrite = true
                 zip.extractAllTo('./../../musitDumps/' + fileList[i].zipFileName, true)
@@ -148,11 +165,11 @@ async function downloadCorema (fileList, callback) {
 async function getFilesAllMuseum() {
     try {
         makeFolders()
-        await download(fileListUm)
+        // await download(fileListUm)
         await download(fileListTmu)
-        await download(fileListNbh)
-        await download(fileListNhm)
-        await downloadCorema(fileListNhm)
+        // await download(fileListNbh)
+        // await download(fileListNhm)
+        // await downloadCorema(fileListNhm)
         // resolve('success')
         // this is now in downloadAndProcessDumps.js:
         // process.exit() // hvis alle filer er downloaded og unzipped så slå av programmet

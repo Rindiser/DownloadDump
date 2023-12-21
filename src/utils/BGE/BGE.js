@@ -156,14 +156,11 @@ async function searchDump(dumpFile,species) {
                 
             }
         }).on('close', function () {
-            // const resulstAndLine = {results, count }
-            // console.log(results)
-            // callback(undefined,results)
-            if (results.length > 2194) {
+            // if (results.length > 2194) {
                 resolve (results)
-            } else {
-                resolve('no data')
-            }
+            // } else {
+                // resolve('no data')
+            // }
 
             
         })
@@ -238,8 +235,9 @@ async function mainBGE() {
     // await checkAgainstDump('Insecta',`${phylaFolder}/Arthropoda/Insecta/BGE_gapSpecies_Insecta.csv`,`./../../../../test/src/data/nhm/entomology_stitched.txt`)
     // await checkAgainstDump('Branchiopoda',`${phylaFolder}/Arthropoda/Branchiopoda/BGE_gapSpecies_Branchiopoda.csv`,`./../../../../test/src/data/nhm/entomology_stitched.txt`)
     // await checkAgainstDump('Krepsdyr',`${phylaFolder}/Krepsdyr-lister/BGE_gapSpecies_krepsdyr.csv`,`./../../../../test/src/data/nhm/krepsdyr_fra_aase.txt`)
-    await checkAgainstDump('non-insect-arthropods',`${phylaFolder}/non-insect-arthropods/BGE_gapSpecies_non-insect-arthropods.csv`,`./../../../../test/src/data/nhm/entomology_stitched.txt`)
+    // await checkAgainstDump('non-insect-arthropods',`${phylaFolder}/non-insect-arthropods/BGE_gapSpecies_non-insect-arthropods.csv`,`./../../../../test/src/data/nhm/entomology_stitched.txt`)
     // await checkAgainstDump('other-krepsdyr-phyla',`${phylaFolder}/other-krepsdyr-phyla/BGE_gapSpecies_other-krepsdyr-phyla.csv`,`./../../../../test/src/data/nhm/krepsdyr_fra_aase.txt`)
+    await checkAgainstDump('insect-types',`${phylaFolder}/Arthropoda/Insecta/BGE_gapSpecies_Insecta.csv`,`./../../../../DownloadDump/src/utils/BGE/insect_types.txt`)
 }
 
 mainBGE()

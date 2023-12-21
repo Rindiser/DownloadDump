@@ -1,9 +1,9 @@
 const readline = require('readline');
 const fs = require('fs')
-const fileListNhm = require('../../../test/src/utils/fileListNhm')
-const fileListTmu = require('../../../test/src/utils/fileListTmu')
-const fileListUm = require('../../../test/src/utils/fileListUm')
-const fileListNbh = require('../../../test/src/utils/fileListNbh')
+const fileListNhm = require('./fileList')
+const fileListTmu = require('./fileListTmu')
+const fileListUm = require('./fileListUm')
+const fileListNbh = require('./fileListNbh')
 const statObject2 = require('./statObject')
 const chalk = require('chalk');
 const clone = require('clone');
@@ -237,7 +237,7 @@ const sumYesNo = (total,denne) => {
     return new Promise((resolve, reject) => {
         // stringify JSON Object' 
         const jsonContent = JSON.stringify(samlingsObj);
-        fs.writeFile("../../../test/src/data/" + museum + "statData.json", jsonContent, 'utf8', function (err) {
+        fs.writeFile("./src/data/renamed/" + museum + "statData.json", jsonContent, 'utf8', function (err) {
             if (err) {
                 console.log("An error occured while writing JSON Object to File.");
                 return console.log(err);
@@ -277,15 +277,10 @@ async function processLineByLine(fileWithPath, currentColl, collList) {
            //Year hent ut år fra en dato
            // datoen må være på dette formatet YYYY-MM-DD f.eks. 1899-07-15
            // Year = tilvekst per år
-        //    console.log(arrayLine[yearField])
            let modifiedDate
-           if (arrayLine[yearField]) {
-
-            // if(!fileWithPath.includes('fisk') && !fileWithPath.includes('fossiler') && !fileWithPath.includes('utad')) {
-                if (arrayLine[yearField].includes('-')) {
-                    modifiedDate = arrayLine[yearField].substring(0,arrayLine[yearField].indexOf('-'))
-                    year = countOccurrences(year, modifiedDate)
-                }
+           if (arrayLine[yearField].includes('-')) {
+                modifiedDate = arrayLine[yearField].substring(0,arrayLine[yearField].indexOf('-'))
+                year = countOccurrences(year, modifiedDate)
             }
             //land
             country = countOccurrences(country,arrayLine[countryField])          
@@ -438,65 +433,57 @@ async function processMediaLineByLine(mediaFileWithPath, currentColl, samlingsOb
 
 //hovedtall
 const main = async function (file, museum)  {
-    console.log(collectionsIncluded)
     const currentMuseum = museum
     museum = museum + '/'
     // her skal den lese igjennom hver fil og returnere poster som er registrer
     // https://codepen.io/rustydev/pen/GBKGKG?editors=0010
     try {
         for (i = 1, len = file.length; i < len; i++) {
-            console.log(collectionsIncluded)
-            if (file[i].name) {
-                let currentColl = file[i]
+            // for (i = 1, len = 3; i < len; i++) {
+            let currentColl = file[i]
             
-                fileWithPath = "../../../test/src/data/" + museum + file[i].name + file[i].occurrenceFileSuffix 
-                mediaFileWithPath = "../../../test/src/data/" + museum + file[i].name + "_media.txt" 
-                multiMediaFileWithPath = "../../../test/src/data/" + museum + file[i].name + "_multimedia.txt" 
-                console.log(fileWithPath)
-    
-                // test om fila fins før vi prøver å lage stat
-                if (fs.existsSync(fileWithPath)) {
-                    // collectionsIncluded.collectionsIncluded[i-1] = file[i].name
-                    collectionsIncluded.collectionsIncluded.push(file[i].name)
-                    collList = collectionsIncluded
-                    const samlingsObj = await processLineByLine(fileWithPath, currentColl, collList);
-                    await saveObjectToFile(samlingsObj, museum)
-                    
-                } else {
-                    console.log(chalk.red('Denne fila eksisterer ikke: ' + fileWithPath)); 
-                }
-                if (fs.existsSync(mediaFileWithPath)) {
-                    const imageResults = await processMediaLineByLine(mediaFileWithPath, currentColl, samlingsObj);   
-                    await saveObjectToFile(imageResults, museum)
-                } else if (fs.existsSync(multiMediaFileWithPath)) {
-                    const imageResults = await processMediaLineByLine(multiMediaFileWithPath, currentColl, samlingsObj);   
-                    await saveObjectToFile(imageResults, museum)
-                } else {
-                    console.log(chalk.red('Denne fila eksisterer ikke: ' + mediaFileWithPath));
-                }
+            fileWithPath = "./src/data/renamed/" + museum + file[i].name + "_occurrence.txt" 
+            mediaFileWithPath = "./src/data/renamed/" + museum + file[i].name + "_media.txt" 
+            multiMediaFileWithPath = "./src/data/renamed/" + museum + file[i].name + "_multimedia.txt" 
+            // mediaFileWithPath = "./src/data/renamed/karplanter_media.txt" 
+            console.log(fileWithPath);
+
+            // test om fila fins før vi prøver å lage stat
+            if (fs.existsSync(fileWithPath)) {
+                collectionsIncluded.collectionsIncluded[i-1] = file[i].name
+                collList = collectionsIncluded
+                const samlingsObj = await processLineByLine(fileWithPath, currentColl, collList);
+                await saveObjectToFile(samlingsObj, museum)
                 
+            } else {
+                console.log(chalk.red('Denne fila eksisterer ikke: ' + fileWithPath)); 
             }
-        }
+            if (fs.existsSync(mediaFileWithPath)) {
+                const imageResults = await processMediaLineByLine(mediaFileWithPath, currentColl, samlingsObj);   
+                await saveObjectToFile(imageResults, museum)
+            } else if (fs.existsSync(multiMediaFileWithPath)) {
+                const imageResults = await processMediaLineByLine(multiMediaFileWithPath, currentColl, samlingsObj);   
+                await saveObjectToFile(imageResults, museum)
+            } else {
+                console.log(chalk.red('Denne fila eksisterer ikke: ' + mediaFileWithPath));
+            }
+            }
         if (i= len) {
         console.log(chalk.blue('vi er ferdige med ' + len + ' filer'));
         }
     } catch (e) {
         console.error(e);
     }
-    console.log('*********************')
-    console.log(collectionsIncluded)
-    console.log('*********************')
-    // collInclFiltered = collectionsIncluded.collectionsIncluded.filter(function(el) {return el} )
-    collectionsIncluded.collectionsIncluded.filter(function(el) {return el} )
-    // collectionsIncluded.collectionsIncluded = collInclFiltered
-    console.log(collectionsIncluded)
+    console.log('*********************');
+    console.log(collectionsIncluded);
+    console.log('*********************');
 }
 
 async function getStatsAllMuseum() {
     try {
-        // await main(fileListNbh, 'nbh')
-        // await main(fileListUm, 'um')
-        // await main(fileListTmu, 'tmu')
+        await main(fileListNbh, 'nbh')
+        await main(fileListUm, 'um')
+        await main(fileListTmu, 'tmu')
         await main(fileListNhm, 'nhm')
     } catch (error) {
         console.log(error);       
