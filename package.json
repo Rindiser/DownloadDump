@@ -26,6 +26,7 @@
     "chalk": "^4.1.0",
     "clone": "^2.1.2",
     "convert-array-to-csv": "^2.0.0",
+    "cron": "^3.1.6",
     "csv-parser": "^3.0.0",
     "csv-writer": "^1.6.0",
     "mkdirp": "^1.0.4",

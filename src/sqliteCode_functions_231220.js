@@ -4,8 +4,8 @@ const { TextEncoder } = require('util');
 const { pipeline } = require('stream');
 const { Transform } = require('stream');
 const papa = require('papaparse')
-const fileList = require('./../../portal/src/utils/fileListNhm')
-//const fileList = require('./../../test/src/utils/fileListNhm')
+// const fileList = require('./../../portal/src/utils/fileListNhm')
+const fileList = require('./../../test/src/utils/fileListNhm')
 const csvParser = require('csv-parser')
 const { resolve } = require('path')
 
@@ -13,8 +13,8 @@ const pathToCoremaDumps = './../../../coremaDumper/'
 const pathToCoremaDumpsForPortal = './../../coremaDumper_forPortal/'
 const pathToMusitDumps = './../../musitDumps/'
 const pathToDatabases = './../../sqliteDatabases/'
-const outfilePath = '../../portal/src/data/nhm/'
-//const outfilePath = './../../test/src/data/nhm/'
+// const outfilePath = '../../portal/src/data/nhm/'
+const outfilePath = './../../test/src/data/nhm/'
 
 const  array_to_file = (outfile,subArray) => {
 
@@ -22,7 +22,7 @@ const  array_to_file = (outfile,subArray) => {
         flags: 'a' // means append
     })
     
-    // console.log("array_to_file starts")
+    console.log("array_to_file starts")
     for (let i = 0; i<subArray.length; i++) {
         logger.write(subArray[i].replace(/"/g,""))
         logger.write("\n")
@@ -110,7 +110,7 @@ async function deleteFromTable (db, tableName) {
                             return console.error(err.message)
                         }
                     } else {
-                        // console.log(`Row(s) deleted ${this.changes} in ${tableName}`)
+                        console.log(`Row(s) deleted ${this.changes} in ${tableName}`)
                         resolve('success')
                     }
                 })
@@ -155,6 +155,7 @@ async function makeNewMycFile(fungus2,lichen2) {
 // is called in runMusitCoremaStitch() and runCoremaStitch()
 async function makeFileOnlyNew(db, tableName, dumpFolder, source) {
     return new Promise(function (resolve, reject) {
+        console.log('tre')
         let pathToFolder
         if (source === "corema") { pathToFolder = pathToCoremaDumpsForPortal }
         else if (source === "musit") { pathToFolder = pathToMusitDumps }
@@ -279,9 +280,18 @@ async function changeEncoding(infile) {
                 });
                 // Handle the finish event of the writable stream
                 writableStream.on('finish', () => {
-                //   console.log('File encoding converted to UTF-8 with character replacement successfully for ' + infile);
+                  console.log('File encoding converted to UTF-8 with character replacement successfully for ' + infile);
                   resolve('success')
                 });
+                // const file = fs.readFileSync(infile, 'utf8')
+                // data = file.replace(/^\uFEFF/, '')
+                // data1 = data.replace(/"/g, '')
+                // data2 = data1.replace(/dcterms:/, '')
+                // fs.writeFileSync(infile, data2, 'utf8', function (err) {
+                //     if (err) return console.log(err)
+                // })
+                
+                // resolve(outfile)
             } catch (error) {
                 reject(new Error(error))
             }
@@ -365,7 +375,7 @@ async function fillTable(db, tablename, filename, update) {
                         }
                     })
                     .on('end', () => {
-                        // console.log('CSV file successfully processed for ' + tablename)
+                        console.log('CSV file successfully processed for ' + tablename)
                         resolve('success')
                     })
             }
@@ -691,6 +701,7 @@ const itemToArraysOnSameLine = (rows, basedOn) => {
                 processedRows.push(rows[i])
             }
         } else if (rows[i].organismID != null) {
+            // if (rows[i].organismID === 'urn:uuid:0177c644-609f-59fd-9b29-5fd6924d0013') {console.log(rows[i])}
             if (rows[i].organismID == rows[i + 1].organismID) { // next line is item of same organism
                 if (existingRow == 'nothing') { // first of two or more items
                     rows[i].fullCatalogNumber = [rows[i].fullCatalogNumber]
@@ -993,196 +1004,192 @@ async function runCoremaStitch(collection, coremaFile, coremaFolder, outfile, up
     await fillTable(db, 'simpledwc', `${pathToCoremaDumpsForPortal}${coremaFolder}/simpledwc${fileSuffix}.txt`)
     const start = coremaFolder.length + 2
     return new Promise(function (resolve, reject) {
-        try {
-            db.serialize(() => { // å ta bort denne fører oss ikke videre, inn i først db.run
-                // only first time:
-                // db.run(`ALTER TABLE simpledwc  
-                //    ADD cleanCatalogNumber INTEGER`)
-                // //remove prefix (coll-urn) from cleanCatNo
-                // return new Promise(function (resolve, reject) {
-                db.run(`UPDATE simpledwc SET cleanCatalogNumber = SUBSTR(catalogNumber,${start},LENGTH(catalogNumber)-${start}-3)`, function (err) {
+        db.serialize(() => { // å ta bort denne fører oss ikke videre, inn i først db.run
+            // only first time:
+            // db.run(`ALTER TABLE simpledwc  
+            //    ADD cleanCatalogNumber INTEGER`)
+            // //remove prefix (coll-urn) from cleanCatNo
+            // return new Promise(function (resolve, reject) {
+            db.run(`UPDATE simpledwc SET cleanCatalogNumber = SUBSTR(catalogNumber,${start},LENGTH(catalogNumber)-${start}-3)`, function (err) {
+                if (err) {
+                    return console.error(err.message)
+                } else {
+                    console.log('not error')
+                }
+            })
+                .all(coremaSelect, (err, rows) => {
                     if (err) {
-                        return console.error(err.message)
-                    } else {
-                        console.log('not error')
+                        console.error(err.message)
                     }
-                })
-                    .all(coremaSelect, (err, rows) => {
-                        if (err) {
-                            console.error(err.message)
-                        }
-                        
-                        // go through all objects
-                        // put organism id in array
-                        // if object exist in array, transform (or add) relevant properties to arrays in that object, and add item-info to object
-                        let processedRows = []
-                        let existingRow = 'nothing'
-                        // console.log(rows.length + ' lengde')
-                        for (i = 0; i < rows.length; i++) {
-                            if (i == rows.length - 1) { // we reached the end of the file
-                                if (existingRow != 'nothing') {
-                                    processedRows.push(existingRow)
-                                    existingRow = 'nothing'
-                                } else {
-                                    processedRows.push(rows[i])
-                                }
+                    
+                    // go through all objects
+                    // put organism id in array
+                    // if object exist in array, transform (or add) relevant properties to arrays in that object, and add item-info to object
+                    let processedRows = []
+                    let existingRow = 'nothing'
+                    console.log(rows.length + ' lengde')
+                    for (i = 0; i < rows.length; i++) {
+                        if (i == rows.length - 1) { // we reached the end of the file
+                            if (existingRow != 'nothing') {
+                                processedRows.push(existingRow)
+                                existingRow = 'nothing'
+                            } else {
+                                processedRows.push(rows[i])
+                            }
 
-                            } else if (rows[i].organismID != null) {
-                                if (rows[i].organismID === rows[i + 1].organismID) { // next line is item of same organism
-                                    
-                                    if (existingRow === 'nothing') { // if this is the first line for this object
-                                        rows[i].fullCatalogNumber = [rows[i].fullCatalogNumber]
-                                        rows[i].preservationType = [rows[i].preservationType]
-                                        if (!rows[i].preparationType) { rows[i].preparationType = rows[i].coremaBasisOfRecord }
-                                        rows[i].preparationType = [rows[i].preparationType]
-                                        rows[i].preparationMaterials = [rows[i].preparationMaterials]
-                                        rows[i].preparedBy = [rows[i].preparedBy]
-                                        rows[i].preparationDate = [rows[i].preparationDate]
-                                        rows[i].materialSampleType = [rows[i].materialSampleType]
-                                        rows[i].geneticAccessionNumber = [rows[i].geneticAccessionNumber]
-                                        rows[i].BOLDProcessID = [rows[i].BOLDProcessID]
-                                        rows[i].concentration = [rows[i].concentration]
-                                        rows[i].concentrationUnit = [rows[i].concentrationUnit]
-                                        rows[i].associatedMedia = [rows[i].associatedMedia]
-                                        existingRow = rows[i]
-                                    } else { // second or higher number of items (or of same item) for one organism
-                                            if (rows[i].associatedMedia) {
-                                                if (!existingRow.associatedMedia.includes(rows[i].associatedMedia) ) {
-                                                    existingRow.associatedMedia.push(rows[i].associatedMedia)
-                                                }    
-                                            }
-                                            // existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
-                                            // existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
-                                            // if (rows[i].geneticAccessionNumber) {
-                                            //     if (!existingRow.geneticAccessionNumber.includes(rows[i].geneticAccessionNumber) ) {
-                                            //         existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
-                                            //     }
-                                            // }
-                                            // if (rows[i].BOLDProcessID) {
-                                            //     if (!existingRow.BOLDProcessID.includes(rows[i].BOLDProcessID) ) {
-                                            //         existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
-                                            //     }
-                                            // }
-                                        // is this next line a new item 
-                                        if (!existingRow.fullCatalogNumber.includes(rows[i].fullCatalogNumber)) {
-                                            // this row is an actual new item
-                                            existingRow.fullCatalogNumber.push(rows[i].fullCatalogNumber)
-                                            existingRow.preservationType.push(rows[i].preservationType)
-                                            if (!rows[i].preparationType) { rows[i].preparationType = rows[i].coremaBasisOfRecord }
-                                            existingRow.preparationType.push(rows[i].preparationType)
-                                            existingRow.preparationMaterials.push(rows[i].preparationMaterials)
-                                            existingRow.preparedBy.push(rows[i].preparedBy)
-                                            existingRow.preparationDate.push(rows[i].preparationDate)
-                                            existingRow.materialSampleType.push(rows[i].materialSampleType)
-                                            existingRow.concentration.push(rows[i].concentration)
-                                            existingRow.concentrationUnit.push(rows[i].concentrationUnit)
-                                            existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
-                                            existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
-                                        } else { // same item as prev. row. always?
-                                            if (!Array.isArray(existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1])) { // turn genAccNo for this item into array, and add genAccno
-                                                existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1] = [existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1]]
-                                                existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1].push(rows[i].geneticAccessionNumber)
-                                            } else {
-                                                existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1].push(rows[i].geneticAccessionNumber)
-                                            }
-                                            if (!Array.isArray(existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1])) { // turn genAccNo for this item into array, and add genAccno
-                                                existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1] = [existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1]]
-                                                existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1].push(rows[i].BOLDProcessID)
-                                            } else {
-                                                existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1].push(rows[i].BOLDProcessID)
-                                            }
-                                        }
-                                        
-                                    }
-                                } else { // next line is not the same organism
-                                    if (existingRow != 'nothing') { // previous line(s) are items of same organism as this, and this is the last item
-                                        
+                        } else if (rows[i].organismID != null) {
+                            if (rows[i].organismID === rows[i + 1].organismID) { // next line is item of same organism
+                                
+                                if (existingRow === 'nothing') { // if this is the first line for this object
+                                    rows[i].fullCatalogNumber = [rows[i].fullCatalogNumber]
+                                    rows[i].preservationType = [rows[i].preservationType]
+                                    if (!rows[i].preparationType) { rows[i].preparationType = rows[i].coremaBasisOfRecord }
+                                    rows[i].preparationType = [rows[i].preparationType]
+                                    rows[i].preparationMaterials = [rows[i].preparationMaterials]
+                                    rows[i].preparedBy = [rows[i].preparedBy]
+                                    rows[i].preparationDate = [rows[i].preparationDate]
+                                    rows[i].materialSampleType = [rows[i].materialSampleType]
+                                    rows[i].geneticAccessionNumber = [rows[i].geneticAccessionNumber]
+                                    rows[i].BOLDProcessID = [rows[i].BOLDProcessID]
+                                    rows[i].concentration = [rows[i].concentration]
+                                    rows[i].concentrationUnit = [rows[i].concentrationUnit]
+                                    rows[i].associatedMedia = [rows[i].associatedMedia]
+                                    existingRow = rows[i]
+                                } else { // second or higher number of items (or of same item) for one organism
                                         if (rows[i].associatedMedia) {
                                             if (!existingRow.associatedMedia.includes(rows[i].associatedMedia) ) {
                                                 existingRow.associatedMedia.push(rows[i].associatedMedia)
                                             }    
                                         }
+                                        // existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
+                                        // existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
                                         // if (rows[i].geneticAccessionNumber) {
                                         //     if (!existingRow.geneticAccessionNumber.includes(rows[i].geneticAccessionNumber) ) {
-                                                // existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
+                                        //         existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
                                         //     }
                                         // }
                                         // if (rows[i].BOLDProcessID) {
                                         //     if (!existingRow.BOLDProcessID.includes(rows[i].BOLDProcessID) ) {
-                                                // existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
+                                        //         existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
                                         //     }
                                         // }
-                                        // it is actually a new item
-                                        if (!existingRow.fullCatalogNumber.includes(rows[i].fullCatalogNumber)) {
-                                            existingRow.fullCatalogNumber.push(rows[i].fullCatalogNumber)
-                                            existingRow.preservationType.push(rows[i].preservationType)
-                                            if (!rows[i].preparationType) { rows[i].preparationType = rows[i].coremaBasisOfRecord }
-                                            existingRow.preparationType.push(rows[i].preparationType)
-                                            existingRow.preparationMaterials.push(rows[i].preparationMaterials)
-                                            existingRow.preparedBy.push(rows[i].preparedBy)
-                                            existingRow.preparationDate.push(rows[i].preparationDate)
-                                            existingRow.materialSampleType.push(rows[i].materialSampleType)
-                                            existingRow.concentration.push(rows[i].concentration)
-                                            existingRow.concentrationUnit.push(rows[i].concentrationUnit)
-                                            existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
-                                            existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
-                                        } else { // same item as prev. row. always?
-                                            if (!Array.isArray(existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1])) { // turn genAccNo for this item into array, and add genAccno
-                                                existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1] = [existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1]]
-                                                existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1].push(rows[i].geneticAccessionNumber)
-                                            } else {
-                                                existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1].push(rows[i].geneticAccessionNumber)
-                                            }
-                                            if (!Array.isArray(existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1])) { // turn genAccNo for this item into array, and add genAccno
-                                                existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1] = [existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1]]
-                                                existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1].push(rows[i].BOLDProcessID)
-                                            } else {
-                                                existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1].push(rows[i].BOLDProcessID)
-                                            }
-                                        }
-                                        existingRow.fullCatalogNumber = existingRow.fullCatalogNumber.join(' | ')
-                                        existingRow.preservationType = existingRow.preservationType.join(' | ')
-                                        existingRow.preparationType = existingRow.preparationType.join(' | ')
-                                        existingRow.preparationMaterials = existingRow.preparationMaterials.join(' | ')
-                                        existingRow.preparedBy = existingRow.preparedBy.join(' | ')
-                                        existingRow.preparationDate = existingRow.preparationDate.join(' | ')
-                                        existingRow.materialSampleType = existingRow.materialSampleType.join(' | ')
-                                        existingRow.geneticAccessionNumber = existingRow.geneticAccessionNumber.join(' | ')
-                                        existingRow.BOLDProcessID = existingRow.BOLDProcessID.join(' | ')
-                                        existingRow.concentration = existingRow.concentration.join(' | ')
-                                        existingRow.concentrationUnit = existingRow.concentrationUnit.join(' | ')
-                                        existingRow.associatedMedia = existingRow.associatedMedia.join(' | ')
-                                        processedRows.push(existingRow)
-                                        existingRow = 'nothing'
-                                    } else { // what is this?
+                                    // is this next line a new item 
+                                    if (!existingRow.fullCatalogNumber.includes(rows[i].fullCatalogNumber)) {
+                                        // this row is an actual new item
+                                        existingRow.fullCatalogNumber.push(rows[i].fullCatalogNumber)
+                                        existingRow.preservationType.push(rows[i].preservationType)
                                         if (!rows[i].preparationType) { rows[i].preparationType = rows[i].coremaBasisOfRecord }
-                                        processedRows.push(rows[i])
+                                        existingRow.preparationType.push(rows[i].preparationType)
+                                        existingRow.preparationMaterials.push(rows[i].preparationMaterials)
+                                        existingRow.preparedBy.push(rows[i].preparedBy)
+                                        existingRow.preparationDate.push(rows[i].preparationDate)
+                                        existingRow.materialSampleType.push(rows[i].materialSampleType)
+                                        existingRow.concentration.push(rows[i].concentration)
+                                        existingRow.concentrationUnit.push(rows[i].concentrationUnit)
+                                        existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
+                                        existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
+                                    } else { // same item as prev. row. always?
+                                        if (!Array.isArray(existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1])) { // turn genAccNo for this item into array, and add genAccno
+                                            existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1] = [existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1]]
+                                            existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1].push(rows[i].geneticAccessionNumber)
+                                        } else {
+                                            existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1].push(rows[i].geneticAccessionNumber)
+                                        }
+                                        if (!Array.isArray(existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1])) { // turn genAccNo for this item into array, and add genAccno
+                                            existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1] = [existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1]]
+                                            existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1].push(rows[i].BOLDProcessID)
+                                        } else {
+                                            existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1].push(rows[i].BOLDProcessID)
+                                        }
                                     }
+                                    
+                                }
+                            } else { // next line is not the same organism
+                                if (existingRow != 'nothing') { // previous line(s) are items of same organism as this, and this is the last item
+                                    
+                                    if (rows[i].associatedMedia) {
+                                        if (!existingRow.associatedMedia.includes(rows[i].associatedMedia) ) {
+                                            existingRow.associatedMedia.push(rows[i].associatedMedia)
+                                        }    
+                                    }
+                                    // if (rows[i].geneticAccessionNumber) {
+                                    //     if (!existingRow.geneticAccessionNumber.includes(rows[i].geneticAccessionNumber) ) {
+                                            // existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
+                                    //     }
+                                    // }
+                                    // if (rows[i].BOLDProcessID) {
+                                    //     if (!existingRow.BOLDProcessID.includes(rows[i].BOLDProcessID) ) {
+                                            // existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
+                                    //     }
+                                    // }
+                                    // it is actually a new item
+                                    if (!existingRow.fullCatalogNumber.includes(rows[i].fullCatalogNumber)) {
+                                        existingRow.fullCatalogNumber.push(rows[i].fullCatalogNumber)
+                                        existingRow.preservationType.push(rows[i].preservationType)
+                                        if (!rows[i].preparationType) { rows[i].preparationType = rows[i].coremaBasisOfRecord }
+                                        existingRow.preparationType.push(rows[i].preparationType)
+                                        existingRow.preparationMaterials.push(rows[i].preparationMaterials)
+                                        existingRow.preparedBy.push(rows[i].preparedBy)
+                                        existingRow.preparationDate.push(rows[i].preparationDate)
+                                        existingRow.materialSampleType.push(rows[i].materialSampleType)
+                                        existingRow.concentration.push(rows[i].concentration)
+                                        existingRow.concentrationUnit.push(rows[i].concentrationUnit)
+                                        existingRow.geneticAccessionNumber.push(rows[i].geneticAccessionNumber)
+                                        existingRow.BOLDProcessID.push(rows[i].BOLDProcessID)
+                                    } else { // same item as prev. row. always?
+                                        if (!Array.isArray(existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1])) { // turn genAccNo for this item into array, and add genAccno
+                                            existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1] = [existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1]]
+                                            existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1].push(rows[i].geneticAccessionNumber)
+                                        } else {
+                                            existingRow.geneticAccessionNumber[existingRow.geneticAccessionNumber.length-1].push(rows[i].geneticAccessionNumber)
+                                        }
+                                        if (!Array.isArray(existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1])) { // turn genAccNo for this item into array, and add genAccno
+                                            existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1] = [existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1]]
+                                            existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1].push(rows[i].BOLDProcessID)
+                                        } else {
+                                            existingRow.BOLDProcessID[existingRow.BOLDProcessID.length-1].push(rows[i].BOLDProcessID)
+                                        }
+                                    }
+                                    if (existingRow.catalogNumber === 55953) {console.log(existingRow)}
+                                    existingRow.fullCatalogNumber = existingRow.fullCatalogNumber.join(' | ')
+                                    existingRow.preservationType = existingRow.preservationType.join(' | ')
+                                    existingRow.preparationType = existingRow.preparationType.join(' | ')
+                                    existingRow.preparationMaterials = existingRow.preparationMaterials.join(' | ')
+                                    existingRow.preparedBy = existingRow.preparedBy.join(' | ')
+                                    existingRow.preparationDate = existingRow.preparationDate.join(' | ')
+                                    existingRow.materialSampleType = existingRow.materialSampleType.join(' | ')
+                                    existingRow.geneticAccessionNumber = existingRow.geneticAccessionNumber.join(' | ')
+                                    existingRow.BOLDProcessID = existingRow.BOLDProcessID.join(' | ')
+                                    existingRow.concentration = existingRow.concentration.join(' | ')
+                                    existingRow.concentrationUnit = existingRow.concentrationUnit.join(' | ')
+                                    existingRow.associatedMedia = existingRow.associatedMedia.join(' | ')
+                                    processedRows.push(existingRow)
+                                    existingRow = 'nothing'
+                                } else { // what is this?
+                                    if (!rows[i].preparationType) { rows[i].preparationType = rows[i].coremaBasisOfRecord }
+                                    processedRows.push(rows[i])
                                 }
                             }
                         }
-                        let newResults = papa.unparse(processedRows, {
-                            delimiter: "\t",
-                        })
-
-                        outfile = outfilePath + outfile
-                        fs.writeFileSync(outfile, newResults)
-
-
+                    }
+                    let newResults = papa.unparse(processedRows, {
+                        delimiter: "\t",
                     })
 
-                db.close((err) => {
-                    if (err) {
-                        console.log(err.message)
-                    }
-                    // console.log('Close the database connection')
-                    resolve('success')
+                    outfile = outfilePath + outfile
+                    fs.writeFileSync(outfile, newResults)
+
+
                 })
+
+            db.close((err) => {
+                if (err) {
+                    console.log(err.message)
+                }
+                console.log('Close the database connection')
+                resolve('success')
             })
-        } catch (error) {
-            reject(new Error(error))
-            console.log(error)
-        }
+        })
     })
     
     // })
@@ -1202,7 +1209,10 @@ async function runCoremaStitch(collection, coremaFile, coremaFolder, outfile, up
 // await runMusitCoremaStitch('fungi','fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema', update)
 
 async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile, basedOn, update) {
+    console.log('en')
+    
     let musitFile2 = await changeEncoding(`${pathToMusitDumps}${musitFile}/${musitFile}.txt`)
+    console.log('to')
     let dbSelect
     let dbSelect2
     let dbSelect3
@@ -1231,9 +1241,11 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
 
     let fileSuffix = ''
     // make new dumpfiles with only records that have been changed since last time
+    console.log(update)
     if (update === 'update') {
         await makeFileOnlyNew(db, musitFile, musitFile, 'musit')
         await makeFileOnlyNew(db, 'simpledwc', coremaFolder, 'corema')
+        console.log('fire')
         await makeOtherFileOnlyNew('amplification', coremaFolder)
         await makeOtherFileOnlyNew('materialsample', coremaFolder)
         await makeOtherFileOnlyNew('multimedia', coremaFolder)
@@ -1241,9 +1253,20 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
         await makeOtherFileOnlyNew('preparation', coremaFolder)
         await makeOtherFileOnlyNew('preservation', coremaFolder)
         await makeOtherFileOnlyNew('resourcerelationship', coremaFolder)
+console.log('fem')
         fileSuffix = '_new'
     } 
 
+    // let amplification2 = await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/amplification${fileSuffix}.txt`)
+    // console.log('seks')
+    // let materialsample2 = await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/materialsample${fileSuffix}.txt`)
+    // let multimedia2 = await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/multimedia${fileSuffix}.txt`)
+    // let permit2 = await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/permit${fileSuffix}.txt`)
+    // let preparation2 = await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/preparation${fileSuffix}.txt`)
+    // let preservation2 = await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/preservation${fileSuffix}.txt`)
+    // let resourcerel2 = await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/resourcerelationship${fileSuffix}.txt`)
+    // let simpledwc2 = await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/simpledwc${fileSuffix}.txt`)
+    
     await changeEncoding(`${pathToMusitDumps}${musitFile}/${musitFile}${fileSuffix}.txt`)
     await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/amplification${fileSuffix}.txt`)
     await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/materialsample${fileSuffix}.txt`)
@@ -1253,6 +1276,7 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/preservation${fileSuffix}.txt`)
     await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/resourcerelationship${fileSuffix}.txt`)
     await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/simpledwc${fileSuffix}.txt`)
+    console.log('seks')
     
     // delete data from tables in a sqlite-database (one per organismgroup)
     if (update === 'empty_fill') {
@@ -1318,136 +1342,147 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     }
 
     const start = coremaFolder.length + 2
+    console.log(start)
+    
     existingLastModified = await findLastModified(db, musitFile)
+        
     outfile = outfilePath + outfile
+    // let logger = fs.createWriteStream(outfile, {
+    //     flags: 'a' // means append
+    // })
 
     return new Promise(function (resolve, reject) { // if we use promise, we cannot use await inside
-        try {
-            db.serialize(() => {
-                
-                db.run(deleteStatement)
-                .run(updateStatement)
-                .run(`UPDATE simpledwc SET cleanCatalogNumber = SUBSTR(catalogNumber,${start},LENGTH(catalogNumber)-${start}-3)`)
-                .run(`DROP VIEW IF EXISTS musitRel`)
-                .run(createViewMusitRel(musitFile, double))
-                .run(`DROP VIEW IF EXISTS coremaFields`)
-                // create view with all corema-fields in one table
-                .run(createViewCoremaFields())
+        db.serialize(() => {
+            
+            // remove from resourcerelationship entries other than musit-regno-connections
+            // db.run(`DELETE FROM resourcerelationship
+            // WHERE SUBSTR (relatedResourceID,13,${length}) != '${prefix}';`)
+            db.run(deleteStatement)
+            // only first time: (not relevant any longer, is fixed when database is created)
+            // .run(`ALTER TABLE resourcerelationship  
+            //    ADD cleanCatalogNumberRecRel INTEGER`)
+            // .run(`ALTER TABLE simpledwc  
+            //    ADD cleanCatalogNumber INTEGER`)
+            // // remove prefix (coll-urn) from cleanCatNo
+            //.run(`UPDATE resourcerelationship SET cleanCatalogNumberRecRel = SUBSTR(relatedResourceID,14+${length})`)
+            .run(updateStatement)
+            .run(`UPDATE simpledwc SET cleanCatalogNumber = SUBSTR(catalogNumber,${start},LENGTH(catalogNumber)-${start}-3)`)
+            .run(`DROP VIEW IF EXISTS musitRel`)
+            .run(createViewMusitRel(musitFile, double))
+            .run(`DROP VIEW IF EXISTS coremaFields`)
+            // create view with all corema-fields in one table
+            .run(createViewCoremaFields())
 
-                db.all(dbSelect, (err, rows) => {
+            db.all(dbSelect, (err, rows) => {
+                if (err) {
+                    console.log('error')
+                    console.error(err.message)
+                }
+                let phloeomanna = rows.find(el => el.catalogNumber === '245548')
+                console.log(phloeomanna)
+                console.log('length rows round 1 ' + rows.length)
+                processedRows = itemToArraysOnSameLine(rows, basedOn)
+                rows.length = 0
+                console.log('after putting items into arrays: ' + processedRows.length)
+                removeCoremaDuplicates(processedRows)
+                console.log('after removing corema-duplicates of musitentries: ' + processedRows.length)
+              
+                
+                let fieldNames = Object.keys(processedRows[0]) //new
+                fs.writeFileSync(outfile, fieldNames.join('\t'))
+                // let logger = fs.createWriteStream(outfile, {
+                //     flags: 'a' // means append
+                // })
+                // logger.write("\n")
+                fs.appendFileSync(outfile,"\n")
+                
+                let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
+                console.log("not too long: " + csvtxt.length)
+                array_to_file(outfile,csvtxt)
+                
+            })
+            if (dbSelect2) {
+                db.all(dbSelect2, (err, rows) => {
                     if (err) {
-                        console.log('error')
                         console.error(err.message)
                     }
+                    console.log('length rows round 2 ' + rows.length)
                     processedRows = itemToArraysOnSameLine(rows, basedOn)
                     rows.length = 0
-                    // console.log('after putting items into arrays: ' + processedRows.length)
+                    console.log('after putting items into arrays: ' + processedRows.length)
                     removeCoremaDuplicates(processedRows)
-                    // console.log('after removing corema-duplicates of musitentries: ' + processedRows.length)
-                
-                    
+                    console.log('length after remove coremaduplicates ' + processedRows.length)
                     let fieldNames = Object.keys(processedRows[0]) //new
-                    fs.writeFileSync(outfile, fieldNames.join('\t'))
-                    fs.appendFileSync(outfile,"\n")
                     
-                    let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
-                    // console.log("not too long: " + csvtxt.length)
-                    let logger = fs.createWriteStream(outfile, {
-                        flags: 'a' // means append
-                    })
-                for (let i = 0; i<csvtxt.length; i++) {
-                    logger.write(csvtxt[i].replace(/"/g,""))
-                    logger.write("\n")
-                }
+                   let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
+                    array_to_file(outfile,csvtxt)
                 })
-                if (dbSelect2) {
-                    db.all(dbSelect2, (err, rows) => {
-                        if (err) {
-                            console.error(err.message)
-                        }
-                        // console.log('length rows round 2 ' + rows.length)
-                        processedRows = itemToArraysOnSameLine(rows, basedOn)
-                        rows.length = 0
-                        // console.log('after putting items into arrays: ' + processedRows.length)
-                        removeCoremaDuplicates(processedRows)
-                        console.log('length after remove coremaduplicates ' + processedRows.length)
+                db.all(dbSelect3, (err, rows) => {
+                    if (err) {
+                        console.error(err.message)
+                    }
+                    console.log('length rows round 3 ' + rows.length)
+                    processedRows = itemToArraysOnSameLine(rows, basedOn)
+                    rows.length = 0
+                    console.log('after putting items into arrays: ' + processedRows.length)
+                    removeCoremaDuplicates(processedRows)
+                    
+                    console.log('length after remove coremaduplicates ' + processedRows.length)
+                    if (processedRows[0]) {
                         let fieldNames = Object.keys(processedRows[0]) //new
-                        
-                    let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
+                    
+                        let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
                         array_to_file(outfile,csvtxt)
-                    })
-                    db.all(dbSelect3, (err, rows) => {
-                        if (err) {
-                            console.error(err.message)
-                        }
-                        // console.log('length rows round 3 ' + rows.length)
-                        processedRows = itemToArraysOnSameLine(rows, basedOn)
-                        rows.length = 0
-                        // console.log('after putting items into arrays: ' + processedRows.length)
-                        removeCoremaDuplicates(processedRows)
-                        
-                        // console.log('length after remove coremaduplicates ' + processedRows.length)
-                        if (processedRows[0]) {
-                            let fieldNames = Object.keys(processedRows[0]) //new
-                        
-                            let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
-                            array_to_file(outfile,csvtxt)
-                        }
-                        
-                    })
-                    db.all(dbSelect4, (err, rows) => {
-                        if (err) {
-                            console.error(err.message)
-                        }
-                        // console.log('length rows round 4 ' + rows.length)
-                        processedRows = itemToArraysOnSameLine(rows, basedOn)
-                        rows.length = 0
-                        // console.log('length after item to arrays on same line ' + processedRows.length)
-                        removeCoremaDuplicates(processedRows)
-                        // console.log('length after remove coremaduplicates ' + processedRows.length)
-                        if (processedRows[0]) {
-                            let fieldNames = Object.keys(processedRows[0]) //new
-                            let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
-                            array_to_file(outfile,csvtxt)
-                        }
-                    })
-                }
-                
-            })
+                    }
+                    
+                })
+                db.all(dbSelect4, (err, rows) => {
+                    if (err) {
+                        console.error(err.message)
+                    }
+                    console.log('length rows round 4 ' + rows.length)
+                    processedRows = itemToArraysOnSameLine(rows, basedOn)
+                    rows.length = 0
+                    console.log('length after item to arrays on same line ' + processedRows.length)
+                    removeCoremaDuplicates(processedRows)
+                    console.log('length after remove coremaduplicates ' + processedRows.length)
+                    if (processedRows[0]) {
+                        let fieldNames = Object.keys(processedRows[0]) //new
+                        let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
+                        array_to_file(outfile,csvtxt)
+                    }
+                })
+            }
+            
+        })
 
-            db.close((err) => {
-                if (err) {
-                    console.log(err.message)
-                }
-                // console.log('Close the database connection')
-                resolve('success')
-            })
-        } catch (error) {
-            reject(new Error(error))
-            console.log(error)
-        }
+        db.close((err) => {
+            if (err) {
+                console.log(err.message)
+            }
+            console.log('Close the database connection')
+            resolve('success')
+        })
     })
 }
 
 
 async function mainSQLiteFunction(update) {
-    
-    await runCoremaStitch('birds', 'no_file', 'NHMO-BI','birds_stitched.txt', update)
-    await runCoremaStitch('mammals','no_file', 'NHMO-DMA','mammals_stitched.txt', update)
-    await runCoremaStitch('fish_herptiles','no_file', 'NHMO-DFH','dna_fish_herptiles_stitched.txt', update)
-    await runCoremaStitch('DNA_other','no_file', 'NHMO-DOT','dna_other_stitched.txt', update)
+    //  await runCoremaStitch('birds', 'no_file', 'NHMO-BI','birds_stitched.txt', update)
+    //  await runCoremaStitch('mammals','no_file', 'NHMO-DMA','mammals_stitched.txt', update)
+     await runCoremaStitch('fish_herptiles','no_file', 'NHMO-DFH','dna_fish_herptiles_stitched.txt', update)
+    //  await runCoremaStitch('DNA_other','no_file', 'NHMO-DOT','dna_other_stitched.txt', update)
 
     ///// from musit's point of view; all musits data, add from corema    
-    await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit',update)
-    await runMusitCoremaStitch('lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt', 'musit',update)
-    await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','musit',update)
-    await runMusitCoremaStitch('entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt', 'musit',update)
+    // await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit',update)
+    // await runMusitCoremaStitch('lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt', 'musit',update)
+    // await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','musit',update)
+    // await runMusitCoremaStitch('entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt', 'musit',update)
 
     // // ///// from coremas point of fiew; all corema data, add from musit    
-    await runMusitCoremaStitch('fungi','fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema', update)
-    await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema', update)
-    await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema', update)
-    resolve('success')
+    // await runMusitCoremaStitch('fungi','fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema', update)
+    // await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema', update)
+    // await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema', update)
 }
 
 module.exports = {

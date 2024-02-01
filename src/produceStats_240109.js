@@ -1,10 +1,15 @@
+const filePath = '../../test'
+
+// use  this for prod
+// const filePath = '../../portal'
 const readline = require('readline');
 const fs = require('fs')
-const fileListNhm = require('../../../test/src/utils/fileListNhm')
-const fileListTmu = require('../../../test/src/utils/fileListTmu')
-const fileListUm = require('../../../test/src/utils/fileListUm')
-const fileListNbh = require('../../../test/src/utils/fileListNbh')
+const fileListNhm = require(filePath + '/src/utils/fileListNhm')
+const fileListTmu = require(filePath + '/src/utils/fileListTmu')
+const fileListUm = require(filePath + '/src/utils/fileListUm')
+const fileListNbh = require(filePath + '/src/utils/fileListNbh')
 const statObject2 = require('./statObject')
+
 const chalk = require('chalk');
 const clone = require('clone');
 
@@ -237,7 +242,7 @@ const sumYesNo = (total,denne) => {
     return new Promise((resolve, reject) => {
         // stringify JSON Object' 
         const jsonContent = JSON.stringify(samlingsObj);
-        fs.writeFile("../../../test/src/data/" + museum + "statData.json", jsonContent, 'utf8', function (err) {
+        fs.writeFile(filePath + "/src/data/" + museum + "statData.json", jsonContent, 'utf8', function (err) {
             if (err) {
                 console.log("An error occured while writing JSON Object to File.");
                 return console.log(err);
@@ -279,9 +284,8 @@ async function processLineByLine(fileWithPath, currentColl, collList) {
            // Year = tilvekst per år
         //    console.log(arrayLine[yearField])
            let modifiedDate
-           if (arrayLine[yearField]) {
-
-            // if(!fileWithPath.includes('fisk') && !fileWithPath.includes('fossiler') && !fileWithPath.includes('utad')) {
+        //    if (arrayLine[yearField]) {
+            if(!fileWithPath.includes('malmer') && !fileWithPath.includes('oslofeltet') && !fileWithPath.includes('fisk') && !fileWithPath.includes('fossiler') && !fileWithPath.includes('utad')) {
                 if (arrayLine[yearField].includes('-')) {
                     modifiedDate = arrayLine[yearField].substring(0,arrayLine[yearField].indexOf('-'))
                     year = countOccurrences(year, modifiedDate)
@@ -449,9 +453,9 @@ const main = async function (file, museum)  {
             if (file[i].name) {
                 let currentColl = file[i]
             
-                fileWithPath = "../../../test/src/data/" + museum + file[i].name + file[i].occurrenceFileSuffix 
-                mediaFileWithPath = "../../../test/src/data/" + museum + file[i].name + "_media.txt" 
-                multiMediaFileWithPath = "../../../test/src/data/" + museum + file[i].name + "_multimedia.txt" 
+                fileWithPath = filePath + "/src/data/" + museum + file[i].name + file[i].occurrenceFileSuffix 
+                mediaFileWithPath = filePath + "/src/data/" + museum + file[i].name + "_media.txt" 
+                multiMediaFileWithPath = filePath + "/src/data/" + museum + file[i].name + "_multimedia.txt" 
                 console.log(fileWithPath)
     
                 // test om fila fins før vi prøver å lage stat
@@ -494,10 +498,11 @@ const main = async function (file, museum)  {
 
 async function getStatsAllMuseum() {
     try {
-        // await main(fileListNbh, 'nbh')
-        // await main(fileListUm, 'um')
-        // await main(fileListTmu, 'tmu')
+        await main(fileListNbh, 'nbh')
+        await main(fileListUm, 'um')
+        await main(fileListTmu, 'tmu')
         await main(fileListNhm, 'nhm')
+        // return true
     } catch (error) {
         console.log(error);       
     }
