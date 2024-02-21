@@ -5,7 +5,7 @@ const { pipeline } = require('stream');
 const { Transform } = require('stream');
 const papa = require('papaparse')
 const fileList = require('./../../portal/src/utils/fileListNhm')
-//const fileList = require('./../../test/src/utils/fileListNhm')
+// const fileList = require('./../../test/src/utils/fileListNhm')
 const csvParser = require('csv-parser')
 const { resolve } = require('path')
 
@@ -954,7 +954,6 @@ async function runCoremaStitch(collection, coremaFile, coremaFolder, outfile, up
     // let simpledwc2 = await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/simpledwc${fileSuffix}.txt`)
 
     await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/amplification${fileSuffix}.txt`)
-    
     await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/materialsample${fileSuffix}.txt`)
     await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/multimedia${fileSuffix}.txt`)
     await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/permit${fileSuffix}.txt`)
@@ -1164,8 +1163,9 @@ async function runCoremaStitch(collection, coremaFile, coremaFolder, outfile, up
                         let newResults = papa.unparse(processedRows, {
                             delimiter: "\t",
                         })
-
+                        console.log(newResults)
                         outfile = outfilePath + outfile
+                        console.log(outfile)
                         fs.writeFileSync(outfile, newResults)
 
 
@@ -1436,6 +1436,7 @@ async function mainSQLiteFunction(update) {
     await runCoremaStitch('mammals','no_file', 'NHMO-DMA','mammals_stitched.txt', update)
     await runCoremaStitch('fish_herptiles','no_file', 'NHMO-DFH','dna_fish_herptiles_stitched.txt', update)
     await runCoremaStitch('DNA_other','no_file', 'NHMO-DOT','dna_other_stitched.txt', update)
+    await runCoremaStitch('invertebrates_with_dna','no_file', 'NHMO-IN','invertebrates_with_dna_stitched.txt', update)
 
     ///// from musit's point of view; all musits data, add from corema    
     await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit',update)

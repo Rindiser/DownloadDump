@@ -111,11 +111,12 @@ async function downloadCorema (fileList, callback) {
     //const zip = new AdmZip(fileName);
     // extracts everything, overwrite = true
     //zip.extractAllTo('./../../coremaDumper_forPortal/NHMO-DAR/', true)
-
+console.log('start')
     for (i = 1, len = fileList.length; i < len; i++) {
         if (fileList[i].source == "corema") {
             let fileName = './../../../coremaDumper/' + fileList[i].akronym + '/' + fileList[i].akronym + '.zip'
             // extract all files from zip-file in coremaDump-folder to local coremaDump-folder for portal
+            console.log(fileName)
             try {
                 const zip = new AdmZip(fileName);
                 // extracts everything, overwrite = true
