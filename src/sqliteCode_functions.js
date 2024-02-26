@@ -4,17 +4,22 @@ const { TextEncoder } = require('util');
 const { pipeline } = require('stream');
 const { Transform } = require('stream');
 const papa = require('papaparse')
-const fileList = require('./../../portal/src/utils/fileListNhm')
-// const fileList = require('./../../test/src/utils/fileListNhm')
+// const fileList = require('./../../portal/src/utils/fileListNhm')
+const fileList = require('./../../test/src/utils/fileListNhm')
 const csvParser = require('csv-parser')
+// const csvParser1 = csvParser({
+//     columns: true, 
+//     skip_empty_lines: true,
+//     bom: true
+//   })
 const { resolve } = require('path')
 
 const pathToCoremaDumps = './../../../coremaDumper/'
 const pathToCoremaDumpsForPortal = './../../coremaDumper_forPortal/'
 const pathToMusitDumps = './../../musitDumps/'
 const pathToDatabases = './../../sqliteDatabases/'
-const outfilePath = '../../portal/src/data/nhm/'
-//const outfilePath = './../../test/src/data/nhm/'
+// const outfilePath = '../../portal/src/data/nhm/'
+const outfilePath = './../../test/src/data/nhm/'
 
 const  array_to_file = (outfile,subArray) => {
 
@@ -171,7 +176,7 @@ async function makeFileOnlyNew(db, tableName, dumpFolder, source) {
                 file = `${pathToFolder}${dumpFolder}/${tableName}2.txt`
             }
             fs.createReadStream(file)
-                .pipe(csvParser({ "separator": "\t" }))
+                .pipe(1({ "separator": "\t" }))
                 .on('data', (row) => {
                     // new code 18.8.23
                     // check if row's catalognumber is in database - if it is from the last year 
@@ -295,15 +300,16 @@ async function changeEncoding(infile) {
 //     filename (string, name of dumpfile where data is fetched)
 async function fillTable(db, tablename, filename, update) {
     return new Promise(function (resolve, reject) {
+        
         try {
             if (!fs.existsSync(filename)) {
                 resolve('success')
             } else {
-               
-                
                 fs.createReadStream(filename)
-                    .pipe(csvParser({ "separator": "\t" }))
+                    .pipe(csvParser({ separator: "\t"}))
                     .on('data', (row) => {
+                        
+
                         if (!filename.includes('corema')) {  // i.e. musitfile. if-statement only works because the corema-files lie in a folder named smth with "corema", so "corema" is in the file-path   
                             db.serialize(() => {
                                 let indexOfDash // I used this in line 268, but removed it, don't remember why. as of june -23, is not used
@@ -320,6 +326,7 @@ async function fillTable(db, tablename, filename, update) {
                                 row.habitat, row.associatedTaxa, row.georeferenceRemarks, row.verbatimCoordinates, row.verbatimSRS, row.associatedMedia, row.CreativeCommonsLicense, row.ArtObsID, row.occurrenceID, row.UTMsone, row.UTMX, row.UTMY, row.datasetName, row.createdDate, row.bioGeoRegion, row.recordedById, row.identifiedById)
                             })
                         } else if (tablename == 'amplification') {
+                            // console.log(row)
                             db.serialize(() => {
                                 if (update === 'update') { db.run(`DELETE FROM amplification WHERE coreid = "${row.coreid}"`) }
                                 db.prepare(`INSERT INTO amplification (coreid, geneticAccessionURI, geneticAccessionNumber, BOLDProcessID) VALUES (?,?,?,?)`).run(row.coreid, row.geneticAccessionURI, row.geneticAccessionNumber, row.BOLDProcessID)
@@ -982,14 +989,14 @@ async function runCoremaStitch(collection, coremaFile, coremaFolder, outfile, up
     // await fillTable(db, 'resourcerelationship', resourcerel2)
     // await fillTable(db, 'simpledwc', simpledwc2)
 
-    await fillTable(db, 'amplification', `${pathToCoremaDumpsForPortal}${coremaFolder}/amplification${fileSuffix}.txt`)
-    await fillTable(db, 'materialsample', `${pathToCoremaDumpsForPortal}${coremaFolder}/materialsample${fileSuffix}.txt`)
-    await fillTable(db, 'multimedia', `${pathToCoremaDumpsForPortal}${coremaFolder}/multimedia${fileSuffix}.txt`)
-    await fillTable(db, 'permit', `${pathToCoremaDumpsForPortal}${coremaFolder}/permit${fileSuffix}.txt`)
-    await fillTable(db, 'preparation', `${pathToCoremaDumpsForPortal}${coremaFolder}/preparation${fileSuffix}.txt`)
-    await fillTable(db, 'preservation', `${pathToCoremaDumpsForPortal}${coremaFolder}/preservation${fileSuffix}.txt`)
-    await fillTable(db, 'resourcerelationship', `${pathToCoremaDumpsForPortal}${coremaFolder}/resourcerelationship${fileSuffix}.txt`)
-    await fillTable(db, 'simpledwc', `${pathToCoremaDumpsForPortal}${coremaFolder}/simpledwc${fileSuffix}.txt`)
+    await fillTable(db, 'amplification', `${pathToCoremaDumpsForPortal}${coremaFolder}/amplification${fileSuffix}2.txt`)
+    await fillTable(db, 'materialsample', `${pathToCoremaDumpsForPortal}${coremaFolder}/materialsample${fileSuffix}2.txt`)
+    await fillTable(db, 'multimedia', `${pathToCoremaDumpsForPortal}${coremaFolder}/multimedia${fileSuffix}2.txt`)
+    await fillTable(db, 'permit', `${pathToCoremaDumpsForPortal}${coremaFolder}/permit${fileSuffix}2.txt`)
+    await fillTable(db, 'preparation', `${pathToCoremaDumpsForPortal}${coremaFolder}/preparation${fileSuffix}2.txt`)
+    await fillTable(db, 'preservation', `${pathToCoremaDumpsForPortal}${coremaFolder}/preservation${fileSuffix}2.txt`)
+    await fillTable(db, 'resourcerelationship', `${pathToCoremaDumpsForPortal}${coremaFolder}/resourcerelationship${fileSuffix}2.txt`)
+    await fillTable(db, 'simpledwc', `${pathToCoremaDumpsForPortal}${coremaFolder}/simpledwc${fileSuffix}2.txt`)
     const start = coremaFolder.length + 2
     return new Promise(function (resolve, reject) {
         try {
@@ -1432,22 +1439,22 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
 
 async function mainSQLiteFunction(update) {
     
-    await runCoremaStitch('birds', 'no_file', 'NHMO-BI','birds_stitched.txt', update)
-    await runCoremaStitch('mammals','no_file', 'NHMO-DMA','mammals_stitched.txt', update)
-    await runCoremaStitch('fish_herptiles','no_file', 'NHMO-DFH','dna_fish_herptiles_stitched.txt', update)
-    await runCoremaStitch('DNA_other','no_file', 'NHMO-DOT','dna_other_stitched.txt', update)
+    // await runCoremaStitch('birds', 'no_file', 'NHMO-BI','birds_stitched.txt', update)
+    // await runCoremaStitch('mammals','no_file', 'NHMO-DMA','mammals_stitched.txt', update)
+    // await runCoremaStitch('fish_herptiles','no_file', 'NHMO-DFH','dna_fish_herptiles_stitched.txt', update)
+    // await runCoremaStitch('DNA_other','no_file', 'NHMO-DOT','dna_other_stitched.txt', update)
     await runCoremaStitch('invertebrates_with_dna','no_file', 'NHMO-IN','invertebrates_with_dna_stitched.txt', update)
 
     ///// from musit's point of view; all musits data, add from corema    
-    await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit',update)
-    await runMusitCoremaStitch('lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt', 'musit',update)
-    await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','musit',update)
-    await runMusitCoremaStitch('entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt', 'musit',update)
+    // await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit',update)
+    // await runMusitCoremaStitch('lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt', 'musit',update)
+    // await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','musit',update)
+    // await runMusitCoremaStitch('entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt', 'musit',update)
 
     // // ///// from coremas point of fiew; all corema data, add from musit    
-    await runMusitCoremaStitch('fungi','fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema', update)
-    await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema', update)
-    await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema', update)
+    // await runMusitCoremaStitch('fungi','fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema', update)
+    // await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema', update)
+    // await runMusitCoremaStitch('entomology','entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema', update)
     resolve('success')
 }
 
@@ -1456,7 +1463,7 @@ module.exports = {
 }
 
 let update
-update = 'update'
-// update = 'empty_fill'
+// update = 'update'
+update = 'empty_fill'
 mainSQLiteFunction(update)
 
