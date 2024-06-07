@@ -150,8 +150,8 @@ async function makeNewMycFile(fungus2,lichen2) {
 }
 
 
-// finds latest time of change in record in table
-// reads dumpfile, singels out records with newer modified-times and puts them into new file
+// finds latest time of change in record in table and latest time of approved-date
+// reads dumpfile, singels out records with newer modified-times or approved-dates and puts them into new file
 // in: db (string, name of sqlite-database)
 //     tableName (string, name of table in sqlite-database)
 //     dumpFolder (string, name of folder with musit-dump-files)
@@ -164,11 +164,11 @@ async function makeFileOnlyNew(db, tableName, dumpFolder, source) {
         if (source === "corema") { pathToFolder = pathToCoremaDumpsForPortal }
         else if (source === "musit") { pathToFolder = pathToMusitDumps }
         // db.serialize(() => { // måtta ha med denne på coremastitch - men ikke på musitstitch?
-        db.all(`SELECT MAX(modified) AS date FROM ${tableName}`, (err, latestModified) => {
+        db.all(`SELECT MAX(modified) AS modifiedDate, MAX(approvedDate) AS approvedDate FROM ${tableName}`, (err, latestModified) => {
             if (err) { console.log(err.message) }
+            console.log(latestModified)
             let newFileRows = []
             const date = new Date()
-            let dateOneYearAgo =  `${date.getFullYear() - 1}-${date.getMonth() + 1}-${date.getDate()}`
             let file
             if (tableName === 'simpledwc') { 
                 file =`${pathToFolder}${dumpFolder}/${tableName}.txt`
@@ -176,18 +176,18 @@ async function makeFileOnlyNew(db, tableName, dumpFolder, source) {
                 file = `${pathToFolder}${dumpFolder}/${tableName}2.txt`
             }
             fs.createReadStream(file)
-                .pipe(1({ "separator": "\t" }))
+                .pipe(csvParser({ "separator": "\t" }))
                 .on('data', (row) => {
-                    // new code 18.8.23
-                    // check if row's catalognumber is in database - if it is from the last year 
-                    // this to catch records that were created before lastestModified.date, but were made public later
-                    // if (row.modified > dateOneYearAgo) {
-
-                    // }
-                    
-                    if (latestModified[0].date < row.modified) {
-                        newFileRows.push(row)
+                    // console.log(row)
+                    if(row.catalogNumber == '78787') {console.log(row)}
+                    if(latestModified) {
+                        if (latestModified[0].modifiedDate < row.modified) {
+                            newFileRows.push(row)
+                        } else if(source=="musit" && latestModified[0].modifiedDate < row.approvedDate) {
+                            newFileRows.push(row)
+                        }
                     }
+                    
                 }).on('end', () => {
                     let newFileResult = papa.unparse(newFileRows, {
                         delimiter: "\t",
@@ -309,7 +309,7 @@ async function fillTable(db, tablename, filename, update) {
                     .pipe(csvParser({ separator: "\t"}))
                     .on('data', (row) => {
                         
-
+// console.log(row)
                         if (!filename.includes('corema')) {  // i.e. musitfile. if-statement only works because the corema-files lie in a folder named smth with "corema", so "corema" is in the file-path   
                             db.serialize(() => {
                                 let indexOfDash // I used this in line 268, but removed it, don't remember why. as of june -23, is not used
@@ -319,11 +319,11 @@ async function fillTable(db, tablename, filename, update) {
                                 }
                                 db.prepare(`INSERT INTO ${tablename} (modified, institutionCode, collectionCode, basisOfRecord, catalogNumber, scientificName, scientificNameAuthorship, kingdom, phylum, class, "order", family, genus, specificEpithet, identifiedBy, dateIdentified, typeStatus, recordNumber,
                                 fieldNumber, recordedBy, eventDate, continent, country, stateProvince, county, locality, decimalLongitude, decimalLatitude, coordinateUncertaintyInMeters, verbatimElevation, verbatimDepth, sex, lifeStage, preparations,individualCount, otherCatalogNumbers, occurrenceRemarks, samplingProtocol, identificationQualifier,
-                                habitat, associatedTaxa, georeferenceRemarks, verbatimCoordinates, verbatimSRS, associatedMedia, CreativeCommonsLicense, ArtObsID, occurrenceID, UTMsone, UTMX, UTMY, datasetName, createdDate, bioGeoRegion, recordedById, identifiedById) 
-                                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+                                habitat, associatedTaxa, georeferenceRemarks, verbatimCoordinates, verbatimSRS, associatedMedia, CreativeCommonsLicense, ArtObsID, occurrenceID, UTMsone, UTMX, UTMY, datasetName, createdDate, bioGeoRegion, recordedById, identifiedById, approvedDate) 
+                                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
                                 .run(row.modified, row.institutionCode, row.collectionCode, row.basisOfRecord, row.catalogNumber/*.substring(0,indexOfDash)*/, row.scientificName, row.scientificNameAuthorship, row.kingdom, row.phylum, row.class, row.order, row.family, row.genus, row.specificEpithet, row.identifiedBy, row.dateIdentified, row.typeStatus, row.recordNumber,
                                 row.fieldNumber, row.recordedBy, row.eventDate, row.continent, row.country, row.stateProvince, row.county, row.locality, row.decimalLongitude, row.decimalLatitude, row.coordinateUncertaintyInMeters, row.verbatimElevation, row.verbatimDepth, row.sex, row.lifeStage, row.preparations, row.individualCount, row.otherCatalogNumbers, row.occurrenceRemarks, row.samplingProtocol, row.identificationQualifier,
-                                row.habitat, row.associatedTaxa, row.georeferenceRemarks, row.verbatimCoordinates, row.verbatimSRS, row.associatedMedia, row.CreativeCommonsLicense, row.ArtObsID, row.occurrenceID, row.UTMsone, row.UTMX, row.UTMY, row.datasetName, row.createdDate, row.bioGeoRegion, row.recordedById, row.identifiedById)
+                                row.habitat, row.associatedTaxa, row.georeferenceRemarks, row.verbatimCoordinates, row.verbatimSRS, row.associatedMedia, row.CreativeCommonsLicense, row.ArtObsID, row.occurrenceID, row.UTMsone, row.UTMX, row.UTMY, row.datasetName, row.createdDate, row.bioGeoRegion, row.recordedById, row.identifiedById, row.approvedDate)
                             })
                         } else if (tablename == 'amplification') {
                             // console.log(row)
@@ -918,13 +918,6 @@ function mapElementToColumns(fieldNames) {
     }
 }
 
-async function findLastModified(db, tableName) {
-    return new Promise(function (resolve, reject) {
-        db.all(`SELECT MAX(modified) AS date FROM ${tableName}`, (err, latestModified) => {
-            resolve (latestModified)
-        })
-    })
-}
 
 // main-function that opens db, query database, stitch data, and writes to file for collections that only have data in corema (e.g. birds)
 // in: collection (string, name of collection)
@@ -1209,6 +1202,7 @@ async function runCoremaStitch(collection, coremaFile, coremaFolder, outfile, up
 // await runMusitCoremaStitch('fungi','fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema', update)
 
 async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile, basedOn, update) {
+    // remove double quotes and part of haeder containing ":" in musit-dumpfile, changes encoding to utf8 (from possibly utf-8-bom)
     let musitFile2 = await changeEncoding(`${pathToMusitDumps}${musitFile}/${musitFile}.txt`)
     let dbSelect
     let dbSelect2
@@ -1217,7 +1211,7 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     if (basedOn === 'corema') {
         dbSelect = coremaSelectWithMusit 
     } else if (collection === 'vascular' || collection === "entomology") {
-        
+        console.log('1214')
         dbSelect = dbSelectFunction('0','250001')
         dbSelect2 = dbSelectFunction('250000','500001')
         dbSelect3 = dbSelectFunction('500000','1000001')
@@ -1239,6 +1233,7 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     let fileSuffix = ''
     // make new dumpfiles with only records that have been changed since last time
     if (update === 'update') {
+        console.log('hit')
         await makeFileOnlyNew(db, musitFile, musitFile, 'musit')
         await makeFileOnlyNew(db, 'simpledwc', coremaFolder, 'corema')
         await makeOtherFileOnlyNew('amplification', coremaFolder)
@@ -1250,7 +1245,7 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
         await makeOtherFileOnlyNew('resourcerelationship', coremaFolder)
         fileSuffix = '_new'
     } 
-
+    console.log('1248')
     await changeEncoding(`${pathToMusitDumps}${musitFile}/${musitFile}${fileSuffix}.txt`)
     await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/amplification${fileSuffix}.txt`)
     await changeEncoding(`${pathToCoremaDumpsForPortal}${coremaFolder}/materialsample${fileSuffix}.txt`)
@@ -1283,18 +1278,7 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
         await deleteFromTable (db, 'simpledwc')
     }
     
-    // fill or update tables from musit- and coremadumpfiles
-    // await fillTable(db, `${musitFile}`, musitFile2, update)
-    // await fillTable(db, 'amplification', amplification2,update)
-    // await fillTable(db, 'materialsample', materialsample2,update)
-    // await fillTable(db, 'multimedia', multimedia2,update)
-    // await fillTable(db, 'permit', permit2,update)
-    // await fillTable(db, 'preparation', preparation2,update)
-    // await fillTable(db, 'preservation', preservation2,update)
-    // await fillTable(db, 'resourcerelationship', resourcerel2,update)
-    // await fillTable(db, 'simpledwc', simpledwc2,update)
-
-    // fill or update tables from musit- and coremadumpfiles
+        // fill or update tables from musit- and coremadumpfiles
     await fillTable(db, `${musitFile}`, `${pathToMusitDumps}${musitFile}/${musitFile}${fileSuffix}2.txt`,update)
     await fillTable(db, 'amplification', `${pathToCoremaDumpsForPortal}${coremaFolder}/amplification${fileSuffix}2.txt`,update)
     await fillTable(db, 'materialsample', `${pathToCoremaDumpsForPortal}${coremaFolder}/materialsample${fileSuffix}2.txt`,update)
@@ -1325,7 +1309,6 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     }
 
     const start = coremaFolder.length + 2
-    existingLastModified = await findLastModified(db, musitFile)
     outfile = outfilePath + outfile
 
     return new Promise(function (resolve, reject) { // if we use promise, we cannot use await inside
@@ -1443,13 +1426,13 @@ async function mainSQLiteFunction(update) {
     // await runCoremaStitch('mammals','no_file', 'NHMO-DMA','mammals_stitched.txt', update)
     // await runCoremaStitch('fish_herptiles','no_file', 'NHMO-DFH','dna_fish_herptiles_stitched.txt', update)
     // await runCoremaStitch('DNA_other','no_file', 'NHMO-DOT','dna_other_stitched.txt', update)
-    await runCoremaStitch('invertebrates_with_dna','no_file', 'NHMO-IN','invertebrates_with_dna_stitched.txt', update)
+    // await runCoremaStitch('invertebrates_with_dna','no_file', 'NHMO-IN','invertebrates_with_dna_stitched.txt', update)
 
     ///// from musit's point of view; all musits data, add from corema    
     // await runMusitCoremaStitch('fungi','fungus_o', 'O-DFL', 'sopp_stitched.txt','musit',update)
     // await runMusitCoremaStitch('lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt', 'musit',update)
     // await runMusitCoremaStitch('vascular','vascular_o', 'O-DP', 'vascular_stitched.txt','musit',update)
-    // await runMusitCoremaStitch('entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt', 'musit',update)
+    await runMusitCoremaStitch('entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt', 'musit',update)
 
     // // ///// from coremas point of fiew; all corema data, add from musit    
     // await runMusitCoremaStitch('fungi','fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema', update)

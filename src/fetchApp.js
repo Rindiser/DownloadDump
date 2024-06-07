@@ -1,8 +1,3 @@
-//makeFolders
-// rydd i kode
-// nye stier
-// dok
-
 const fetch = require('node-fetch');
 const fs = require('fs')
 // const fileListNhm = require('./../../test/src/utils/fileListNhm')
@@ -14,6 +9,8 @@ const fileListTmu = require('./../../portal/src/utils/fileListTmu')
 const fileListUm = require('./../../portal/src/utils/fileListUm')
 const fileListNbh = require('./../../portal/src/utils/fileListNbh')
 
+// const loanPath = "./../../test/src/data/nhm"
+const loanPath = "./../../portal/src/data/nhm"
 const AbortController = require('abort-controller')
 const util = require('util')
 const AdmZip = require('adm-zip');
@@ -83,6 +80,7 @@ function makeFileNames (zipFile, museum) {
 // download the musitfiles and unzip
 async function download (fileList, callback) {
     const museum = fileList[0].filMetadata.museum
+    console.log(museum)
     for (i = 1, len = fileList.length; i < len; i++) {
         if (fileList[i].source == "musit") {
             // let fileName = './src/data/' + fileList[i].name + "_" + museum + '.zip'
@@ -100,6 +98,19 @@ async function download (fileList, callback) {
             } catch (error) {
                 console.log(chalk.red(error));
             }
+        } else if (fileList[i].source == "loans") {
+            console.log('loans')
+            const response = await fetch(fileList[i].url, { signal: controller.signal })
+            .then(response =>  streamPipeline(response.body, fs.createWriteStream('./../../musitDumps/NHM_loans.zip')))
+            .catch(err => console.log(chalk.red(err)))
+        } 
+        try {
+            const zip = new AdmZip('./../../musitDumps/NHM_loans.zip');
+            // extracts everything, overwrite = true
+            zip.extractAllTo(loanPath, true)
+            
+        } catch (error) {
+            console.log(chalk.red(error));
         }
     } 
 }
@@ -111,7 +122,7 @@ async function downloadCorema (fileList, callback) {
     //const zip = new AdmZip(fileName);
     // extracts everything, overwrite = true
     //zip.extractAllTo('./../../coremaDumper_forPortal/NHMO-DAR/', true)
-console.log('start')
+
     for (i = 1, len = fileList.length; i < len; i++) {
         if (fileList[i].source == "corema") {
             let fileName = './../../../coremaDumper/' + fileList[i].akronym + '/' + fileList[i].akronym + '.zip'

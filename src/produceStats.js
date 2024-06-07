@@ -1,7 +1,7 @@
-//const filePath = '../../test'
+const filePath = '../../test'
 
 // use  this for prod
-const filePath = '../../portal'
+// const filePath = '../../portal'
 const readline = require('readline');
 const fs = require('fs')
 const fileListNhm = require(filePath + '/src/utils/fileListNhm')
@@ -149,6 +149,8 @@ const calcAkkumulativtYear = (year) => {
     // akkumulativ samlingsstørrelse
     let element = 0
     let lengthTest = "" // for å test om årstallet har 4 nummer, eller blir det problemer
+    const date = new Date()
+    let thisYear = date.getFullYear()
     for (let i = 0; i < year.length; i++) {
         lengthTest = ' ' + year[i].year
         if (isNaN(year[i].number) ) {
@@ -156,7 +158,7 @@ const calcAkkumulativtYear = (year) => {
         }
         else if (lengthTest.length <= 4) {
             console.log(year[i].year);
-        } else if (year[i].year > 2021 || year[i].year < 1500) {
+        } else if (year[i].year > thisYear || year[i].year < 1500) {
             console.log(year[i].year);
         } else {
         element += year[i].number;
@@ -177,14 +179,15 @@ const addYearsAkkumulativt = (year) => {
     let element = 0
     let lengthTest = "" // for å test om årstallet har 4 nummer, eller blir det problemer
     let accYear = []
+    const date = new Date()
+    let thisYear = date.getFullYear()
     for (let i = 0; i < cloneYear.length; i++) {
         lengthTest = ' ' + year[i].year
         if (isNaN(year[i].number) ) {
             console.log('nei');
-        }
-        else if (lengthTest.length <= 4) {
+        } else if (lengthTest.length <= 4) {
             console.log(year[i].year);
-        } else if (year[i].year > 2021 || year[i].year < 1500) {
+        } else if (year[i].year > thisYear || year[i].year < 1500) {
             console.log(year[i].year);
         } else {
         element += cloneYear[i].number;
@@ -257,6 +260,7 @@ const sumYesNo = (total,denne) => {
 // input: fileWithPath = filnavne med path som er en dump av databasen i Darwin Core format
 // currentColl som er filnavn ut extention, eg. Vasular_o
 async function processLineByLine(fileWithPath, currentColl, collList) {   
+    console.log(currentColl)
    return new Promise((resolve, reject) => {
    const readInterface = readline.createInterface({      
        input: fs.createReadStream(fileWithPath),
@@ -285,7 +289,7 @@ async function processLineByLine(fileWithPath, currentColl, collList) {
         //    console.log(arrayLine[yearField])
            let modifiedDate
         //    if (arrayLine[yearField]) {
-            if(!fileWithPath.includes('malmer') && !fileWithPath.includes('oslofeltet') && !fileWithPath.includes('fisk') && !fileWithPath.includes('fossiler') && !fileWithPath.includes('utad')) {
+            if(!fileWithPath.includes('malmer') && !fileWithPath.includes('oslofeltet') && !fileWithPath.includes('fisk') && !fileWithPath.includes('fossiler') && !fileWithPath.includes('utad') && !fileWithPath.includes('crustacea')  && !fileWithPath.includes('insectTypes')) {
                 if (arrayLine[yearField].includes('-')) {
                     modifiedDate = arrayLine[yearField].substring(0,arrayLine[yearField].indexOf('-'))
                     year = countOccurrences(year, modifiedDate)
@@ -496,9 +500,9 @@ const main = async function (file, museum)  {
 
 async function getStatsAllMuseum() {
     try {
-        await main(fileListNbh, 'nbh')
-        await main(fileListUm, 'um')
-        await main(fileListTmu, 'tmu')
+        // await main(fileListNbh, 'nbh')
+        // await main(fileListUm, 'um')
+        // await main(fileListTmu, 'tmu')
         await main(fileListNhm, 'nhm')
         // return true
     } catch (error) {
