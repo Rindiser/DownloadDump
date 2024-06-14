@@ -4,6 +4,8 @@
   "description": "Download av MUSIT & COREMA dumpen til server",
   "main": "index.js",
   "scripts": {
+    "main": "node --max-old-space-size=8096 src/downloadAndProcessDumps.js",
+    "sql": "node --max-old-space-size=8096 src/sqliteCode_functions.js",
     "start": "node src/app.js",
     "fe": "nodemon src/fetchApp.js -e js",
     "st": "nodemon src/utils/produceStats.js -e js",
@@ -22,20 +24,19 @@
   "dependencies": {
     "@turf/turf": "^6.5.0",
     "abort-controller": "^3.0.0",
-    "adm-zip": "^0.5.5",
-    "chalk": "^4.1.0",
+    "adm-zip": "^0.5.14",
+    "chalk": "^4.1.2",
     "clone": "^2.1.2",
     "convert-array-to-csv": "^2.0.0",
-    "cron": "^3.1.6",
+    "cron": "^3.1.7",
     "csv-parser": "^3.0.0",
     "csv-writer": "^1.6.0",
-    "mkdirp": "^1.0.4",
-    "node-fetch": "^2.6.1",
-    "papaparse": "^5.3.0",
-    "sqlite3": "^5.1.4",
+    "node-fetch": "^2.7.0",
+    "papaparse": "^5.4.1",
+    "sqlite3": "^5.1.7",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "nodemon": "^2.0.7"
+    "nodemon": "^3.1.3"
   }
 }
