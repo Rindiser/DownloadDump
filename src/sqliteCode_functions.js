@@ -21,7 +21,6 @@ function combinePath(basePath, filePath) {
   }
 const fileList = combinePath(basePath, '/utils/fileListNhm');
 
-
 const grandParentDirectory = path.join(__dirname, '../../');
 const pathToCoremaDumps = path.join(grandParentDirectory, 'coremaDumper/')
 const pathToCoremaDumpsForPortal = path.join(grandParentDirectory, 'coremaDumper_forPortal/')
@@ -190,9 +189,14 @@ async function makeFileOnlyNew(db, tableName, dumpFolder, source) {
         db.all(`SELECT MAX(modified) AS modifiedDate, MAX(approvedDate) AS approvedDate FROM ${tableName}`, (err, latestModified) => {
             if (err) { console.log(chalk.red('makeFileOnlyNew har følgende feil line 183: ') + err.message);}
             // console.log('latestModified line 185: ')
-            // console.log(latestModified)
+            // console.log(latestModified[0].modifiedDate.getDate())
             let newFileRows = []
-            const date = new Date()
+            const date = new Date(latestModified[0].modifiedDate)
+            // const date = Date.parse(latestModified[0].modifiedDate)
+            // console.log(date)
+            const dateArray = latestModified[0].modifiedDate.split('T')
+            // const date2 = `${date.getFullYear()}-${date.getMonth()}-${date.getDate}`
+            // console.log(date2)
             let file = ''
             if (tableName === 'simpledwc') { 
                 file = path.join(pathToFolder, dumpFolder, tableName + '.txt')
@@ -203,11 +207,15 @@ async function makeFileOnlyNew(db, tableName, dumpFolder, source) {
             fs.createReadStream(file)
                 .pipe(csvParser({ "separator": "\t" }))
                 .on('data', (row) => {
-                    // if(row.catalogNumber == '78787') {console.log('her kommer row line 191: '); console.log(row);} // hva er dette??
+                    if(row.catalogNumber == 'O-DFL-21664/2-D') {console.log('her kommer row line 191: '); console.log(row);} // hva er dette??
+                    // console.log(row)
                     if(latestModified) {
-                        if (latestModified[0].modifiedDate < row.modified) {
+                        // if (latestModified[0].modifiedDate < row.modified) {
+                        // console.log(latestModified)
+                        if (String(dateArray[0]) < row.modified) {
                             newFileRows.push(row)
-                        } else if(source=="musit" && latestModified[0].modifiedDate < row.approvedDate) {
+                        // } else if(source=="musit" && latestModified[0].modifiedDate < row.approvedDate) {
+                        } else if(source=="musit" && String(dateArray[0]) < row.approvedDate) {
                             newFileRows.push(row)
                         }
                     }
@@ -1394,11 +1402,11 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
 async function mainSQLiteFunction(update) {
 
     const coremaTasks = [
-        // ['birds', 'no_file', 'NHMO-BI', 'birds_stitched.txt'],
-        // ['mammals', 'no_file', 'NHMO-DMA', 'mammals_stitched.txt'],
-        // ['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
-        // ['DNA_other', 'no_file', 'NHMO-DOT', 'dna_other_stitched.txt'],
-        // ['invertebrates_with_dna', 'no_file', 'NHMO-IN', 'invertebrates_with_dna_stitched.txt'],
+        ['birds', 'no_file', 'NHMO-BI', 'birds_stitched.txt'],
+        ['mammals', 'no_file', 'NHMO-DMA', 'mammals_stitched.txt'],
+        ['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
+        ['DNA_other', 'no_file', 'NHMO-DOT', 'dna_other_stitched.txt'],
+        ['invertebrates_with_dna', 'no_file', 'NHMO-IN', 'invertebrates_with_dna_stitched.txt'],
        
     ];
 
@@ -1406,13 +1414,13 @@ async function mainSQLiteFunction(update) {
     // last 3 from coremas point of fiew; all corema data, add from musit    
     const musitTasks = [
 
-        // ['fungi', 'fungus_o', 'O-DFL', 'sopp_stitched.txt','musit'],
-        // ['lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt','musit'],
-        // ['vascular', 'vascular_o', 'O-DP', 'vascular_stitched.txt','musit'],
-        // ['entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt','musit'],
+        ['fungi', 'fungus_o', 'O-DFL', 'sopp_stitched.txt','musit'],
+        ['lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt','musit'],
+        ['vascular', 'vascular_o', 'O-DP', 'vascular_stitched.txt','musit'],
+        ['entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt','musit'],
         ['fungi', 'fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema'],
-        // ['vascular', 'vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema'],
-        // ['entomology', 'entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema'],
+        ['vascular', 'vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema'],
+        ['entomology', 'entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema'],
     ];
 
     try {
