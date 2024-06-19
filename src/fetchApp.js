@@ -166,11 +166,11 @@ async function downloadCorema (fileList) {
 async function getFilesAllMuseum() {
     try {
         makeFolders(basePath)
-        await download(fileListUm)
+        // await download(fileListUm)
         await download(fileListTmu)
-        await download(fileListNbh)
+        // await download(fileListNbh)
         await download(fileListNhm)
-        await downloadCorema(fileListNhm)
+        // await downloadCorema(fileListNhm)
         
     } catch (error) {
         console.log(error);   

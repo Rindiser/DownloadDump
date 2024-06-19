@@ -8,7 +8,7 @@
     "sql": "node --max-old-space-size=8096 src/sqliteCode_functions.js",
     "start": "node src/app.js",
     "fe": "nodemon src/fetchApp.js -e js",
-    "st": "nodemon src/utils/produceStats.js -e js",
+    "st": "node src/produceStats.js -e js",
     "dc": "nodemon --max-old-space-size=8096 src/utils/trimFiles.js -e js",
     "stm": "nodemon --max-old-space-size=8096 src/utils/GM_stitchFiles_musit.js -e js",
     "sort": "nodemon --max-old-space-size=8096 src/utils/sortCoremaFiles.js -e js",

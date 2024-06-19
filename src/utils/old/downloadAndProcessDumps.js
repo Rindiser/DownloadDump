@@ -1,7 +1,7 @@
 // main file
 
-const fetchApp = require('./fetchApp')
-const sqliteCode = require('./sqliteCode_functions')
+const fetchApp = require('../../fetchApp')
+const sqliteCode = require('../../sqliteCode_functions')
 
 let update
 update = 'update'
