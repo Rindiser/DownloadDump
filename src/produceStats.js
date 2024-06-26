@@ -5,16 +5,15 @@
 const readline = require('readline');
 const fs = require('fs')
 const path = require('path');
-// const fileListNhm = require(filePath + '/src/utils/fileListNhm')
-// const fileListTmu = require(filePath + '/src/utils/fileListTmu')
-// const fileListUm = require(filePath + '/src/utils/fileListUm')
-// const fileListNbh = require(filePath + '/src/utils/fileListNbh')
 
 
 // making the path dynamic so that we easyly can swap between prod and test
 const prodOrTest = require('./prodOrTest')
 const basePath = prodOrTest()
-console.log(basePath);
+console.log('basePath: ' + basePath);
+const mediaBasePath = path.join(basePath, '/../../')
+console.log('mediaBasePath: ' + mediaBasePath);
+
 function combinePath(basePath, filePath) {
     const fullPath = path.join(basePath, filePath);
     const module = require(fullPath);
@@ -32,6 +31,7 @@ const statObject2 = require('./statObject')
 
 const chalk = require('chalk');
 const clone = require('clone');
+const date = new Date()
 
 // sett opp objekter og variable for å holde dataene som søkes opp. 
 // Pga mutability problemer så lager vi ekstra objekter for å holde data som 
@@ -55,6 +55,7 @@ let collectionsIncluded = {
     let country = []
     let totcountry = ""
     let year = []
+    let currentProblems = []
     let totYear = ""
     let akkumulativYear = []  
     let totAkkumulativYear = ""
@@ -64,6 +65,7 @@ let collectionsIncluded = {
         collector: {}
     }
     let recordedBy = []
+    let recordedByField = ""
     let totRecordedBy = ""
 
     let hasCoordinates = [
@@ -83,54 +85,58 @@ let collectionsIncluded = {
     let typeStatus = []
     let totTypeStatus = ""
     let countryField = ""
+    let catalogNummer = ""
 
 
-    // to reset the avariables between each museum
-    const resetGlobalVariables = () => {
-        samlingsObj = {}; // Empty object
-        statObject = clone(statObject2); // Deep clone of statObject2
-        totObject = clone(statObject2); // Deep clone of totObject2
-      
-        totalcollectionSize = 0;
-      
-        collectionsIncluded = {
-          collectionsIncluded: []
-        };
-      
-        country = [];
-        totcountry = "";
-        year = [];
-        totYear = "";
-        akkumulativYear = [];
-        totAkkumulativYear = "";
-      
-        collectionEvent = {
-          date: {},
-          collector: {}
-        };
-        recordedBy = [];
-        totRecordedBy = "";
-      
-        hasCoordinates = [
-          { yes: 0 },
-          { no: 0 }
-        ];
-        totalhasCoordinates = [
-          { yes: 0 },
-          { no: 0 }
-        ];
-      
-        hasImage = 0;
-        totHasImage = 0;
-      
-        taxon = {};
-        order = [];
-        family = [];
-        genus = [];
-        typeStatus = [];
-        totTypeStatus = "";
-        countryField = "";
-      }
+// to reset the avariables between each museum
+const resetGlobalVariables = () => {
+    samlingsObj = {}; // Empty object
+    statObject = clone(statObject2); // Deep clone of statObject2
+    totObject = clone(statObject2); // Deep clone of totObject2
+    
+    totalcollectionSize = 0;
+    
+    collectionsIncluded = {
+        collectionsIncluded: []
+    };
+    
+    country = [];
+    totcountry = "";
+    currentProblems = []
+    year = [];
+    totYear = "";
+    akkumulativYear = [];
+    totAkkumulativYear = "";
+    
+    collectionEvent = {
+        date: {},
+        collector: {}
+    };
+    recordedBy = [];
+    recordedByField = ""
+    totRecordedBy = "";
+    
+    hasCoordinates = [
+        { yes: 0 },
+        { no: 0 }
+    ];
+    totalhasCoordinates = [
+        { yes: 0 },
+        { no: 0 }
+    ];
+    
+    hasImage = 0;
+    totHasImage = 0;
+    
+    taxon = {};
+    order = [];
+    family = [];
+    genus = [];
+    typeStatus = [];
+    totTypeStatus = "";
+    countryField = "";
+    let catalogNummer = "";
+    }
       
 
 // Sorteringsfunskjon for å sortere objekter 
@@ -242,33 +248,41 @@ const calcAkkumulativtYear = (year) => {
 // Vi tar arrayen Years og legger sammen alle årene så vi får akkumulativ størrelse
 // Denne trenger bare kjøre 1 gang etter at alle samlingene er gjennomgått, eller kjøres etter hver samling og skrive over
 const addYearsAkkumulativt = (year) => {
+
     cloneYear = clone(year)
     cloneYear.sort(compareValues('year')) // from small to large
     let element = 0
     let lengthTest = "" // for å test om årstallet har 4 nummer, eller blir det problemer
     let accYear = []
-    const date = new Date()
+
     let thisYear = date.getFullYear()
+
     for (let i = 0; i < cloneYear.length; i++) {
         lengthTest = ' ' + year[i].year
-        if (isNaN(year[i].number) ) {
-            console.log('nei');
-        } else if (lengthTest.length <= 4) {
-            console.log(year[i].year);
-        } else if (year[i].year > thisYear || year[i].year < 1500) {
-            console.log(year[i].year);
+        if (isNaN(year[i].number) || lengthTest.length <= 4 || year[i].year > thisYear || year[i].year < 1600) {
+            continue;
         } else {
-        element += cloneYear[i].number;
-        accYear[i] = {
-            year: cloneYear[i].year,
-            number: element
-            }   
+            element += cloneYear[i].number;
+            accYear[i] = {
+                year: cloneYear[i].year,
+                number: element
+            };   
         } 
-    };
+    }
     return accYear
 
 }
 
+
+// put together the suspisious years
+const getSuspiciousYears = (museum, currentColl, problemArray) => {
+    console.log(chalk.green('from getSuspiciousYears'));
+    const cloneproblemArray = clone(problemArray)
+    const problemObj = {}
+    problemObj[museum] = {}; // Create an empty object for museum key
+    problemObj[museum][currentColl] = [cloneproblemArray];
+    return problemObj;
+}
 
 // add objects so we get totalnumbers for collection
 //input [{key: value},{key:value},{key:value}], sortby sier om resultatet skal sortres etter key eller value
@@ -309,7 +323,7 @@ const sumYesNo = (total,denne) => {
 // input et object
 // resultat_ en fil med navn statData.json på JSON format
  async function saveObjectToFile(samlingsObj, museum) {
-    // console.log(chalk.red('vi lagrer....'));
+
     return new Promise((resolve, reject) => {
         // stringify JSON Object' 
         const jsonContent = JSON.stringify(samlingsObj);
@@ -321,7 +335,7 @@ const sumYesNo = (total,denne) => {
                 return console.log(err);
             }
         })
-            // console.log("JSON file has been saved.");
+
             resolve('finished');
     })
 }
@@ -329,8 +343,10 @@ const sumYesNo = (total,denne) => {
 // funskjon for å ta ut data fra filene
 // input: fileWithPath = filnavne med path som er en dump av databasen i Darwin Core format
 // currentColl som er filnavn ut extention, eg. Vasular_o
-async function processLineByLine(fileWithPath, currentColl, collList) {   
-    console.log(currentColl)
+async function processLineByLine(fileWithPath, currentColl, collList, museum) {   
+    console.log('museum: ' + museum + '     currentColl: ' + chalk.green(currentColl.name))
+    let currentProblem = ''
+    
    return new Promise((resolve, reject) => {
    const readInterface = readline.createInterface({      
        input: fs.createReadStream(fileWithPath),
@@ -343,12 +359,21 @@ async function processLineByLine(fileWithPath, currentColl, collList) {
     readInterface.on('line', (line) => {    
         const  arrayLine = line.split("\t"); //lag en arry splittet på tab         
         if (linesCount === 0) {
+            catalogNummer = arrayLine.indexOf('catalogNumber')
             countryField = arrayLine.indexOf('country')
             recordedByField = arrayLine.indexOf('recordedBy')
             orderField  = arrayLine.indexOf('order')
             familyField  = arrayLine.indexOf('family')
             genusField  = arrayLine.indexOf('genus')
-            yearField = arrayLine.indexOf('eventDate')
+            if (arrayLine.indexOf('eventDate') !== -1) {
+                yearField = arrayLine.indexOf('eventDate');
+            } else if (arrayLine.indexOf('year') !== -1) {
+                yearField = arrayLine.indexOf('year');
+            } else {
+                yearField = ''
+            }
+            
+            console.log('index of yearFiled: ' + chalk.blue(yearField));
             coordinatesLatField = arrayLine.indexOf('decimalLatitude')  
             typeStatusField = arrayLine.indexOf('typeStatus')                      
         }
@@ -356,15 +381,31 @@ async function processLineByLine(fileWithPath, currentColl, collList) {
            //Year hent ut år fra en dato
            // datoen må være på dette formatet YYYY-MM-DD f.eks. 1899-07-15
            // Year = tilvekst per år
-        //    console.log(arrayLine[yearField])
-           let modifiedDate
-        //    if (arrayLine[yearField]) {
-            if(!fileWithPath.includes('malmer') && !fileWithPath.includes('oslofeltet') && !fileWithPath.includes('fisk') && !fileWithPath.includes('fossiler') && !fileWithPath.includes('utad') && !fileWithPath.includes('crustacea')  && !fileWithPath.includes('insectTypes')) {
-                if (arrayLine[yearField].includes('-')) {
-                    modifiedDate = arrayLine[yearField].substring(0,arrayLine[yearField].indexOf('-'))
-                    year = countOccurrences(year, modifiedDate)
+
+           let modifiedDate = ""
+            if (arrayLine[yearField]) {
+                if(!fileWithPath.includes('malmer') && !fileWithPath.includes('oslofeltet') && !fileWithPath.includes('fisk') && !fileWithPath.includes('utad') && !fileWithPath.includes('crustacea')  && !fileWithPath.includes('insectTypes')) {
+                    if (arrayLine[yearField].includes('-')) {
+                        modifiedDate = arrayLine[yearField].substring(0,arrayLine[yearField].indexOf('-'))
+                        year = countOccurrences(year, modifiedDate)
+                    }
+                } else {
+                    modifiedDate = arrayLine[yearField]
+                }
+
+                const thisYear = date.getFullYear()
+                try {
+                    if (modifiedDate.length === 4 && (modifiedDate > thisYear || modifiedDate < 1500)) {
+                        currentProblem = museum + '\t' + currentColl.name + '\t' + arrayLine[catalogNummer] + '\t' + modifiedDate + '\n';
+                        currentProblems.push(currentProblem)
+                        console.log('currentProblems:');
+                        console.log(currentProblems);
+                    }
+                } catch (error) {
+                        // do nothing
                 }
             }
+
             //land
             country = countOccurrences(country,arrayLine[countryField])          
             //innsamler, her er noen ganger flere innsamlere klumpet sammen, disse må skilles frahverandre
@@ -409,6 +450,8 @@ async function processLineByLine(fileWithPath, currentColl, collList) {
         // totAkkumulativYear = sumData(totAkkumulativYear, akkumulativYear, 'key')
         totcountry = sumData(totcountry, country)
         totYear = sumData(totYear, year, 'key')
+        // totProblemYears = getSuspiciousYears(museum, currentColl.name, currentProblems)
+
         totAkkumulativYear =  addYearsAkkumulativt(totYear)
         totRecordedBy = sumData(totRecordedBy, recordedBy)
         totTypeStatus = sumData(totTypeStatus, typeStatus)
@@ -418,6 +461,7 @@ async function processLineByLine(fileWithPath, currentColl, collList) {
  
         // lagre tall for enkelt samlinger
         statObject[0].collectionEvent.year = year
+        statObject[0].collectionEvent.suspiciousYears = currentProblems
         statObject[0].collectionEvent.collector = recordedBy
         statObject[1].geography.country = country
         statObject[1].geography.coordinates = hasCoordinates
@@ -428,6 +472,7 @@ async function processLineByLine(fileWithPath, currentColl, collList) {
 
         // lagre tall for sum av samlinger          
         totObject[0].collectionEvent.year = totYear
+        // totObject[0].collectionEvent.suspiciousYears = totProblemYears
         totObject[0].collectionEvent.collector = totRecordedBy
         totObject[1].geography.country = totcountry
         totObject[1].geography.coordinates = totalhasCoordinates
@@ -514,31 +559,32 @@ async function processMediaLineByLine(mediaFileWithPath, currentColl, samlingsOb
 
 //hovedtall
 const main = async function (file, museum)  {
-    // console.log(collectionsIncluded)
+
     // const currentMuseum = museum
     // museum = museum + '/'
     // her skal den lese igjennom hver fil og returnere poster som er registrer
     // https://codepen.io/rustydev/pen/GBKGKG?editors=0010
     try {
         for (i = 1, len = file.length; i < len; i++) {
-            // console.log(collectionsIncluded)
+
             if (file[i].name) {
                 const currentColl = file[i]
                 fileWithPath = path.join( basePath, 'data', museum, currentColl.name + currentColl.occurrenceFileSuffix)
-                console.log('fileWithPath: ' + fileWithPath);
-                // fileWithPath = filePath + "/src/data/" + museum + file[i].name + file[i].occurrenceFileSuffix 
+
                 mediaFileWithPath = path.join( basePath, 'data', museum, currentColl.name + "_media.txt") 
-                // mediaFileWithPath = filePath + "/src/data/" + museum + file[i].name + "_media.txt" 
+                mediaFileNotMovedMusit = path.join(mediaBasePath, 'musitDumps', currentColl.zipFileName, currentColl.zipFileName + currentColl.mediaFile + '.txt') 
+                if(currentColl.source === 'corema'){
+                    mediaFileNotMovedCorema = path.join(mediaBasePath, 'coremaDumper_forPortal', currentColl.akronym, 'multimedia.txt')
+                }
+                
                 multiMediaFileWithPath = path.join( basePath, 'data', museum, currentColl.name + "_multimedia.txt") 
-                // multiMediaFileWithPath = filePath + "/src/data/" + museum + file[i].name + "_multimedia.txt" 
-                // console.log(fileWithPath)
     
                 // test om fila fins før vi prøver å lage stat
                 if (fs.existsSync(fileWithPath)) {
                     // collectionsIncluded.collectionsIncluded[i-1] = file[i].name
                     collectionsIncluded.collectionsIncluded.push(file[i].name)
                     collList = collectionsIncluded
-                    const samlingsObj = await processLineByLine(fileWithPath, currentColl, collList);
+                    const samlingsObj = await processLineByLine(fileWithPath, currentColl, collList, museum);
                     await saveObjectToFile(samlingsObj, museum)
                     
                 } else {
@@ -547,38 +593,40 @@ const main = async function (file, museum)  {
                 if (fs.existsSync(mediaFileWithPath)) {
                     const imageResults = await processMediaLineByLine(mediaFileWithPath, currentColl, samlingsObj);   
                     await saveObjectToFile(imageResults, museum)
+                } else if (fs.existsSync(mediaFileNotMovedMusit)) {
+                    const imageResults = await processMediaLineByLine(mediaFileNotMovedMusit, currentColl, samlingsObj);   
+                    await saveObjectToFile(imageResults, museum)
                 } else if (fs.existsSync(multiMediaFileWithPath)) {
                     const imageResults = await processMediaLineByLine(multiMediaFileWithPath, currentColl, samlingsObj);   
                     await saveObjectToFile(imageResults, museum)
-                } else {
+                } else if (fs.existsSync(mediaFileNotMovedCorema)) {
+                    const imageResults = await processMediaLineByLine(mediaFileNotMovedCorema, currentColl, samlingsObj);   
+                    await saveObjectToFile(imageResults, museum)
+                }else {
                     console.log(chalk.red('Denne fila eksisterer ikke: ' + mediaFileWithPath));
                 }
-                
             }
         }
-        // if (i= len) {
-        // console.log(chalk.blue('vi er ferdige med ' + len + ' filer'));
-        // }
+
     } catch (e) {
         console.error(e);
     }
     console.log('*********************')
     console.log(collectionsIncluded)
     console.log('*********************')
-    // collInclFiltered = collectionsIncluded.collectionsIncluded.filter(function(el) {return el} )
+
     collectionsIncluded.collectionsIncluded.filter(function(el) {return el} )
-    // collectionsIncluded.collectionsIncluded = collInclFiltered
-    // console.log(collectionsIncluded)
+
 }
 
 async function getStatsAllMuseum() {
     try {
-        await main(fileListNbh, 'nbh')
-        resetGlobalVariables()
-        await main(fileListUm, 'um')
-        resetGlobalVariables()
-        await main(fileListTmu, 'tmu')
-        resetGlobalVariables()
+        // await main(fileListNbh, 'nbh')
+        // resetGlobalVariables()
+        // await main(fileListUm, 'um')
+        // resetGlobalVariables()
+        // await main(fileListTmu, 'tmu')
+        // resetGlobalVariables()
         await main(fileListNhm, 'nhm')
         console.log(chalk.green('Finnish with all collections'));
         // return true

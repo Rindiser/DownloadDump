@@ -52,29 +52,33 @@ function makeFolders(basePath) {
         }
     });
 }
-  
+
+
 const fsRenameFiles = (oldName,newName) => {
-    // console.log(' vi kjører fsRenameFiles ');
+    console.log(' vi kjører fsRenameFiles ');
     fs.rename(oldName, newName, (err) => {
         if (err){
             console.log(chalk.red('Rename error: ' + err));
         } 
         else {
-            // console.log(chalk.green('Rename complete!'));
+
+    console.log(chalk.green('Rename complete of: ') + oldName +  ' to ' + newName);
         }
     })
 }
 
 // rename files to include collection-name in file-name
 // in: object from filelist
-function makeFileNames (zipFile, museum) {
+async function makeFileNames (zipFile, museum) {
     museum = museum + "/"
     const oldPath = pathToMusitDumps
-    const newPath = basePath + '/data/'
+    const newPath = path.join(basePath, 'data')
     if (zipFile.occurrenceFileSuffix.includes('occurrence')) {
 
-        let oldName = oldPath + zipFile.zipFileName + '/' + zipFile.zipFileName +".txt"
-        let newName = newPath + museum + zipFile.name + "_occurrence.txt"
+        // let oldName = oldPath + zipFile.zipFileName + '/' + zipFile.zipFileName +".txt"
+        let oldName = path.join(oldPath, zipFile.zipFileName, zipFile.zipFileName +".txt" )
+        // let newName = newPath + museum + zipFile.name + "_occurrence.txt"
+        let newName = path.join(newPath, museum, zipFile.name + "_occurrence.txt")
         fsRenameFiles(oldName,newName)
     
         let mediaOldName = ""
@@ -87,7 +91,27 @@ function makeFileNames (zipFile, museum) {
         }
     } 
 }
-  
+
+// function makeFileNames (zipFile, museum) {
+//     museum = museum + "/"
+//     const oldPath = pathToMusitDumps
+//     const newPath = basePath + '/data/'
+//     if (zipFile.occurrenceFileSuffix.includes('occurrence')) {
+
+//         let oldName = oldPath + zipFile.zipFileName + '/' + zipFile.zipFileName +".txt"
+//         let newName = newPath + museum + zipFile.name + "_occurrence.txt"
+//         fsRenameFiles(oldName,newName)
+    
+//         let mediaOldName = ""
+//         let mediaNewName = ""
+    
+//         if (zipFile.source === "musit") {   
+//             mediaOldName = oldPath + zipFile.zipFileName + '/' + zipFile.zipFileName + zipFile.mediaFile + ".txt"
+//             mediaNewName = newPath + museum + zipFile.name + "_media.txt"
+//             fsRenameFiles(mediaOldName,mediaNewName)
+//         }
+//     } 
+// }
 
 // Hovedfunksjon
 // download the musitfiles and unzip
@@ -163,13 +187,50 @@ async function downloadCorema (fileList) {
 }
 
 
+async function downloadIPT(fileList) {
+    if (!fileList || fileList.length === 0) {
+        throw new Error("File list is empty or not provided.");
+    }
+
+    const museum = fileList[0].filMetadata.museum
+
+    try {  
+        for (i = 1, len = fileList.length; i < len; i++) {
+            const file = fileList[i];
+            if (file.source !== "musit" && file.source !== "corema" && file.source !== "journals" && file.source !== "archive" && file.url.includes('ipt')) {
+                console.log('vi laster ned ' + chalk.green('IPT') + ' data for: ' + file.name)
+                let fileName = path.join(pathToMusitDumps,`${file.zipFileName}.zip`)
+                // Attempt to download the file
+                console.log('her kommer url: ' + file.url);
+                const response = await fetch(file.url, { signal: controller.signal });
+                if (!response.ok) {
+                    // throw new Error(`Unexpected response ${response.statusText}`);
+                    console.log(`Unexpected response ${response.statusText}`);
+                }
+                await streamPipeline(response.body, fs.createWriteStream(fileName));
+
+                // // Extract the downloaded zip file
+                const zip = new AdmZip(fileName);
+                zip.extractAllTo(path.join(pathToMusitDumps,file.zipFileName), true)
+                makeFileNames(file, museum);
+
+            } 
+        }
+    } catch (error) {
+        console.log(chalk.red('error downloading from IPT: ') + error);
+    }
+}
+
+
 async function getFilesAllMuseum() {
     try {
         makeFolders(basePath)
         // await download(fileListUm)
-        await download(fileListTmu)
+        // await download(fileListTmu)
         // await download(fileListNbh)
-        await download(fileListNhm)
+        await downloadIPT(fileListNbh)
+        // await download(fileListNhm)
+        // await downloadIPT(fileListNhm)
         // await downloadCorema(fileListNhm)
         
     } catch (error) {

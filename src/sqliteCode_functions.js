@@ -1402,11 +1402,11 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
 async function mainSQLiteFunction(update) {
 
     const coremaTasks = [
-        ['birds', 'no_file', 'NHMO-BI', 'birds_stitched.txt'],
-        ['mammals', 'no_file', 'NHMO-DMA', 'mammals_stitched.txt'],
-        ['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
-        ['DNA_other', 'no_file', 'NHMO-DOT', 'dna_other_stitched.txt'],
-        ['invertebrates_with_dna', 'no_file', 'NHMO-IN', 'invertebrates_with_dna_stitched.txt'],
+    //     ['birds', 'no_file', 'NHMO-BI', 'birds_stitched.txt'],
+    //     ['mammals', 'no_file', 'NHMO-DMA', 'mammals_stitched.txt'],
+    //     ['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
+    //     ['DNA_other', 'no_file', 'NHMO-DOT', 'dna_other_stitched.txt'],
+    //     ['invertebrates_with_dna', 'no_file', 'NHMO-IN', 'invertebrates_with_dna_stitched.txt'],
        
     ];
 
@@ -1414,12 +1414,12 @@ async function mainSQLiteFunction(update) {
     // last 3 from coremas point of fiew; all corema data, add from musit    
     const musitTasks = [
 
-        ['fungi', 'fungus_o', 'O-DFL', 'sopp_stitched.txt','musit'],
-        ['lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt','musit'],
-        ['vascular', 'vascular_o', 'O-DP', 'vascular_stitched.txt','musit'],
-        ['entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt','musit'],
-        ['fungi', 'fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema'],
-        ['vascular', 'vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema'],
+        // ['fungi', 'fungus_o', 'O-DFL', 'sopp_stitched.txt','musit'],
+        // ['lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt','musit'],
+        // ['vascular', 'vascular_o', 'O-DP', 'vascular_stitched.txt','musit'],
+        // ['entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt','musit'],
+        // ['fungi', 'fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema'],
+        // ['vascular', 'vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema'],
         ['entomology', 'entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema'],
     ];
 
