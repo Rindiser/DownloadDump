@@ -384,7 +384,7 @@ async function processLineByLine(fileWithPath, currentColl, collList, museum) {
 
            let modifiedDate = ""
             if (arrayLine[yearField]) {
-                if(!fileWithPath.includes('malmer') && !fileWithPath.includes('oslofeltet') && !fileWithPath.includes('fisk') && !fileWithPath.includes('utad') && !fileWithPath.includes('crustacea')  && !fileWithPath.includes('insectTypes')) {
+                if(!fileWithPath.includes('malmer') && !fileWithPath.includes('oslofeltet') && !fileWithPath.includes('fisk') && !fileWithPath.includes('utad') && !fileWithPath.includes('crustacea')  && !fileWithPath.includes('entomology_types')) {
                     if (arrayLine[yearField].includes('-')) {
                         modifiedDate = arrayLine[yearField].substring(0,arrayLine[yearField].indexOf('-'))
                         year = countOccurrences(year, modifiedDate)

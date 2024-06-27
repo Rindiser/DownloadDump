@@ -1407,6 +1407,11 @@ async function mainSQLiteFunction(update) {
     //     ['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
     //     ['DNA_other', 'no_file', 'NHMO-DOT', 'dna_other_stitched.txt'],
     //     ['invertebrates_with_dna', 'no_file', 'NHMO-IN', 'invertebrates_with_dna_stitched.txt'],
+        // ['birds', 'no_file', 'NHMO-BI', 'birds_stitched.txt'],
+        // ['mammals', 'no_file', 'NHMO-DMA', 'mammals_stitched.txt'],
+        // ['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
+        // ['DNA_other', 'no_file', 'NHMO-DOT', 'dna_other_stitched.txt'],
+        ['invertebrates', 'no_file', 'NHMO-IN', 'invertebrates_stitched.txt'],
        
     ];
 
