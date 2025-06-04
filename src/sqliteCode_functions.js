@@ -36,7 +36,6 @@ const  array_to_file = (outfile,subArray) => {
         flags: 'a' // means append
     })
     
-    // console.log("array_to_file starts")
     for (let i = 0; i<subArray.length; i++) {
         logger.write(subArray[i].replace(/"/g,""))
         logger.write("\n")
@@ -102,7 +101,7 @@ async function createDatabase(file, source, mainTable, collection) {
         return db
     // database exist, we just open it
     } else {
-        console.log('db exist already')
+        // console.log('db exist already')
         db = new sqlite3.Database(file)
         console.log(`Connected to the ${collection} database`)
         return db
@@ -140,9 +139,9 @@ async function deleteFromTable (db, tableName) {
 // concatenate fungus- and lichen-musit-dumpfiles to stitch musit data to fungi-lichen-corema-data
 // out: a txt-file with data from both fungus-musit-dump and lichen-musit-dump
 async function makeNewMycFile(fungus2,lichen2) {
-    console.log(chalk.yellow('makeNewMycFile'));
-    console.log('fungus2: ' + fungus2);
-    console.log('lichen2: ' + lichen2);
+    // console.log(chalk.yellow('makeNewMycFile'));
+    // console.log('fungus2: ' + fungus2);
+    // console.log('lichen2: ' + lichen2);
     const combinedFilePath = path.join(pathToMusitDumps, 'fungus_lichens_o', 'fungus_lichens_o.txt');
     if (fs.existsSync(combinedFilePath)) {
         fs.unlinkSync(combinedFilePath);
@@ -166,7 +165,7 @@ async function makeNewMycFile(fungus2,lichen2) {
             console.log('error in makeNewMycFile: ' + err);
             return console.log(err)
         }
-        console.log(chalk.green('done combining myc and lichens'));
+        // console.log(chalk.green('done combining myc and lichens'));
         resolve('success')
     })
 }
@@ -207,14 +206,9 @@ async function makeFileOnlyNew(db, tableName, dumpFolder, source) {
             fs.createReadStream(file)
                 .pipe(csvParser({ "separator": "\t" }))
                 .on('data', (row) => {
-                    if(row.catalogNumber == 'O-DFL-21664/2-D') {console.log('her kommer row line 191: '); console.log(row);} // hva er dette??
-                    // console.log(row)
                     if(latestModified) {
-                        // if (latestModified[0].modifiedDate < row.modified) {
-                        // console.log(latestModified)
                         if (String(dateArray[0]) < row.modified) {
                             newFileRows.push(row)
-                        // } else if(source=="musit" && latestModified[0].modifiedDate < row.approvedDate) {
                         } else if(source=="musit" && String(dateArray[0]) < row.approvedDate) {
                             newFileRows.push(row)
                         }
@@ -1004,7 +998,7 @@ async function runCoremaStitch(collection, coremaFile, coremaFolder, outfile, up
                     if (err) {
                         return console.error(err.message)
                     } else {
-                        console.log(chalk.green('No error i db.serialize'))
+                        // console.log(chalk.green('No error i db.serialize'))
                     }
                 })
                     .all(coremaSelect, (err, rows) => {
@@ -1205,11 +1199,11 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     if (musitFile.includes("fung") && basedOn === "corema") { double = "yes" } else { double = "no" }
 
     if (double === "yes") {
-        console.log('her skal makeMyc funksjon starte');
+        // console.log('her skal makeMyc funksjon starte');
 
         let fungus2 = await changeEncoding(path.join(pathToMusitDumps, 'fungus_o', 'fungus_o.txt'))
         let lichen2 = await changeEncoding(path.join(pathToMusitDumps, 'lichens_o', 'lichens_o.txt'))
-        console.log('fungus2: ' + fungus2);
+        // console.log('fungus2: ' + fungus2);
         await makeNewMycFile(fungus2, lichen2)
     }
     let dataBaseFile = `${pathToDatabases}${collection}.db`
@@ -1309,7 +1303,7 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
                     }
                     processedRows = itemToArraysOnSameLine(rows, basedOn)
                     rows.length = 0
-                    console.log('after putting items into arrays: ' + processedRows.length)
+                    // console.log('after putting items into arrays: ' + processedRows.length)
                     removeCoremaDuplicates(processedRows)
                     // console.log('after removing corema-duplicates of musitentries: ' + processedRows.length)
                 
@@ -1337,7 +1331,7 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
                         rows.length = 0
                         // console.log('after putting items into arrays: ' + processedRows.length)
                         removeCoremaDuplicates(processedRows)
-                        console.log('length after remove coremaduplicates ' + processedRows.length)
+                        // console.log('length after remove coremaduplicates ' + processedRows.length)
                         let fieldNames = Object.keys(processedRows[0]) //new
                         
                     let csvtxt = processedRows.map(mapElementToColumns(fieldNames))
@@ -1402,47 +1396,47 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
 async function mainSQLiteFunction(update) {
 
     const coremaTasks = [
-    //     ['birds', 'no_file', 'NHMO-BI', 'birds_stitched.txt'],
-    //     ['mammals', 'no_file', 'NHMO-DMA', 'mammals_stitched.txt'],
-    //     ['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
-    //     ['DNA_other', 'no_file', 'NHMO-DOT', 'dna_other_stitched.txt'],
-    //     ['invertebrates_with_dna', 'no_file', 'NHMO-IN', 'invertebrates_with_dna_stitched.txt'],
-        // ['birds', 'no_file', 'NHMO-BI', 'birds_stitched.txt'],
-        // ['mammals', 'no_file', 'NHMO-DMA', 'mammals_stitched.txt'],
-        // ['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
-        // ['DNA_other', 'no_file', 'NHMO-DOT', 'dna_other_stitched.txt'],
+        ['birds', 'no_file', 'NHMO-BI', 'birds_stitched.txt'],
+        ['mammals', 'no_file', 'NHMO-DMA', 'mammals_stitched.txt'],
+        ['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
+        ['DNA_other', 'no_file', 'NHMO-DOT', 'dna_other_stitched.txt'],
         ['invertebrates', 'no_file', 'NHMO-IN', 'invertebrates_stitched.txt'],
+        ['birds', 'no_file', 'NHMO-BI', 'birds_stitched.txt'],
+        ['mammals', 'no_file', 'NHMO-DMA', 'mammals_stitched.txt'],
+        ['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
+        ['DNA_other', 'no_file', 'NHMO-DOT', 'dna_other_stitched.txt'],
+        ['invertebrates', 'no_file', 'NHMO-IN', 'invertebrates_stitched.txt']
        
-    ];
+    ]
 
     // first 4 from from musit's point of view; all musits data, add from corema
     // last 3 from coremas point of fiew; all corema data, add from musit    
     const musitTasks = [
 
-        // ['fungi', 'fungus_o', 'O-DFL', 'sopp_stitched.txt','musit'],
-        // ['lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt','musit'],
-        // ['vascular', 'vascular_o', 'O-DP', 'vascular_stitched.txt','musit'],
-        // ['entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt','musit'],
-        // ['fungi', 'fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema'],
-        // ['vascular', 'vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema'],
-        ['entomology', 'entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema'],
-    ];
+        ['fungi', 'fungus_o', 'O-DFL', 'sopp_stitched.txt','musit'],
+        ['lichens', 'lichens_o', 'O-DFL', 'lav_stitched.txt','musit'],
+        ['vascular', 'vascular_o', 'O-DP', 'vascular_stitched.txt','musit'],
+        ['entomology', 'entomology_nhmo', 'NHMO-DAR', 'entomology_stitched.txt','musit'],
+        ['fungi', 'fungus_lichens_o', 'O-DFL', 'dna_fungi_lichens_stitched.txt','corema'],
+        ['vascular', 'vascular_o', 'O-DP', 'dna_vascular_stitched.txt','corema'],
+        ['entomology', 'entomology_nhmo', 'NHMO-DAR', 'dna_entomology_stitched.txt','corema']
+    ]
 
     try {
         for (const task of coremaTasks) {
-            console.log(`Starting runCoremaStitch ${chalk.blue(task[0])}`);
+            // console.log(`Starting runCoremaStitch ${chalk.blue(task[0])}`);
             await runCoremaStitch(...task, update);
-            console.log(`runCoremaStitch ${chalk.green(task[0])} completed`);
+            // console.log(`runCoremaStitch ${chalk.green(task[0])} completed`);
 
         }
 
         for (const task of musitTasks) {
-            console.log(`Starting runMusitCoremaStitch ${chalk.blue(task[0])}`);
+            // console.log(`Starting runMusitCoremaStitch ${chalk.blue(task[0])}`);
             await runMusitCoremaStitch(...task, update);
-            console.log(`runMusitCoremaStitch ${chalk.green(task[0])} completed`);
+            // console.log(`runMusitCoremaStitch ${chalk.green(task[0])} completed`);
         }
 
-        console.log('All tasks completed');
+        // console.log('All tasks completed');
     } catch (error) {
         console.error(chalk.red(`An error occurred in mainSQLiteFunction(): ${error.message}`));
     }

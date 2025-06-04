@@ -12,8 +12,7 @@ const streamPipeline = util.promisify(require('stream').pipeline)
 const { resolve } = require('path');
 
 // making the path dynamic so that we easyly can swap between prod and test
-const prodOrTest = require('./prodOrTest');
-const { log } = require('console');
+const prodOrTest = require('./prodOrTest')
 const basePath = prodOrTest()
 
 function combinePath(basePath, filePath) {
@@ -126,11 +125,10 @@ async function download (fileList) {
     try {
         
         for (i = 1, len = fileList.length; i < len; i++) {
-            
             const file = fileList[i];
             // console.log('her kommer source: ' + file.source);
             if (file.source === "musit") { 
-                continue    
+                
                 let fileName = path.join(pathToMusitDumps,`${file.zipFileName}.zip`)
                 // Attempt to download the file
                 const response = await fetch(file.url, { signal: controller.signal });
@@ -146,9 +144,6 @@ async function download (fileList) {
                 makeFileNames(file, museum);
 
             }  else if (file.source === "loans") {
-                console.log('vi laster ned lån');
-                console.log(pathToMusitDumps);
-                
             
                 const response = await fetch(file.url, { signal: controller.signal });
                 if (!response.ok) {
@@ -230,13 +225,13 @@ async function downloadIPT(fileList) {
 async function getFilesAllMuseum() {
     try {
         makeFolders(basePath)
-        // await download(fileListUm)
-        // await download(fileListTmu)
-        // await download(fileListNbh)
-     //   await downloadIPT(fileListNbh)
+        await download(fileListUm)
+        await download(fileListTmu)
+        await download(fileListNbh)
+        await downloadIPT(fileListNbh)
         await download(fileListNhm)
-        // await downloadIPT(fileListNhm)
-        // await downloadCorema(fileListNhm)
+        await downloadIPT(fileListNhm)
+        await downloadCorema(fileListNhm)
         
     } catch (error) {
         console.log(error);   
