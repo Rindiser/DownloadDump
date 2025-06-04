@@ -92,26 +92,6 @@ async function makeFileNames (zipFile, museum) {
     } 
 }
 
-// function makeFileNames (zipFile, museum) {
-//     museum = museum + "/"
-//     const oldPath = pathToMusitDumps
-//     const newPath = basePath + '/data/'
-//     if (zipFile.occurrenceFileSuffix.includes('occurrence')) {
-
-//         let oldName = oldPath + zipFile.zipFileName + '/' + zipFile.zipFileName +".txt"
-//         let newName = newPath + museum + zipFile.name + "_occurrence.txt"
-//         fsRenameFiles(oldName,newName)
-    
-//         let mediaOldName = ""
-//         let mediaNewName = ""
-    
-//         if (zipFile.source === "musit") {   
-//             mediaOldName = oldPath + zipFile.zipFileName + '/' + zipFile.zipFileName + zipFile.mediaFile + ".txt"
-//             mediaNewName = newPath + museum + zipFile.name + "_media.txt"
-//             fsRenameFiles(mediaOldName,mediaNewName)
-//         }
-//     } 
-// }
 
 // Hovedfunksjon
 // download the musitfiles and unzip
@@ -128,7 +108,7 @@ async function download (fileList) {
             const file = fileList[i];
             // console.log('her kommer source: ' + file.source);
             if (file.source === "musit") { 
-                
+                continue
                 let fileName = path.join(pathToMusitDumps,`${file.zipFileName}.zip`)
                 // Attempt to download the file
                 const response = await fetch(file.url, { signal: controller.signal });
@@ -144,6 +124,7 @@ async function download (fileList) {
                 makeFileNames(file, museum);
 
             }  else if (file.source === "loans") {
+            console.log('vi låner');
             
                 const response = await fetch(file.url, { signal: controller.signal });
                 if (!response.ok) {
@@ -154,8 +135,9 @@ async function download (fileList) {
 
                 // Extract the downloaded zip file
                 const zip = new AdmZip(pathToLoanDump);
-                zip.extractAllTo(path.join(pathToMusitDumps, 'NHM_loans'), true)
-                // makeFileNames(file, museum);
+                // move the file to the datafolder while exstracting
+                // zip.extractAllTo(path.join(pathToMusitDumps, 'NHM_loans'), true)
+                zip.extractAllTo(loanPath, true)
             }
             
         } 
@@ -225,13 +207,13 @@ async function downloadIPT(fileList) {
 async function getFilesAllMuseum() {
     try {
         makeFolders(basePath)
-        await download(fileListUm)
-        await download(fileListTmu)
-        await download(fileListNbh)
-        await downloadIPT(fileListNbh)
+        // await download(fileListUm)
+        // await download(fileListTmu)
+        // await download(fileListNbh)
+        // await downloadIPT(fileListNbh)
         await download(fileListNhm)
-        await downloadIPT(fileListNhm)
-        await downloadCorema(fileListNhm)
+        // await downloadIPT(fileListNhm)
+        // await downloadCorema(fileListNhm)
         
     } catch (error) {
         console.log(error);   
