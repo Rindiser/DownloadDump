@@ -2,3 +2,8 @@ data/
 node_modules/
 *.zip
 *.geojson
+*.txt
+*.xlsx
+*.csv
+utils/BG
+utils/compare

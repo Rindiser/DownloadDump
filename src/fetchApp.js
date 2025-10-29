@@ -34,9 +34,7 @@ const pathToMusitDumps = path.join(grandParentDirectory, 'musitDumps/')
 const pathToDatabases = path.join(grandParentDirectory, 'sqliteDatabases/')
 const loanPath = path.join(basePath, '/data/nhm/');
 
-  console.log('*********************************************************************');
-  console.log('*********************************************************************');
-  console.log('*********************************************************************');
+//   console.log('*********************************************************************');
 
 // Function to create directories based on the museum array
 function makeFolders(basePath) {
@@ -55,14 +53,15 @@ function makeFolders(basePath) {
 
 
 const fsRenameFiles = (oldName,newName) => {
-    console.log(' vi kjører fsRenameFiles ');
     fs.rename(oldName, newName, (err) => {
         if (err){
-            console.log(chalk.red('Rename error: ' + err));
+            if (!err.includes('media')) {
+            console.log(chalk.red('Rename error: ' + err))
+            }
         } 
         else {
 
-    console.log(chalk.green('Rename complete of: ') + oldName +  ' to ' + newName);
+    console.log(chalk.green('Rename complete to ')  + newName);
         }
     })
 }
@@ -183,7 +182,7 @@ async function downloadIPT(fileList) {
                 console.log('vi laster ned ' + chalk.green('IPT') + ' data for: ' + file.name)
                 let fileName = path.join(pathToMusitDumps,`${file.zipFileName}.zip`)
                 // Attempt to download the file
-                console.log('her kommer url: ' + file.url);
+                // console.log('her kommer url: ' + file.url);
                 const response = await fetch(file.url, { signal: controller.signal });
                 if (!response.ok) {
                     // throw new Error(`Unexpected response ${response.statusText}`);

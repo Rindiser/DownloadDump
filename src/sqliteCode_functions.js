@@ -103,7 +103,7 @@ async function createDatabase(file, source, mainTable, collection) {
     } else {
         // console.log('db exist already')
         db = new sqlite3.Database(file)
-        console.log(`Connected to the ${collection} database`)
+        // console.log(`Connected to the ${collection} database`)
         return db
     }
 }
@@ -180,7 +180,7 @@ async function makeNewMycFile(fungus2,lichen2) {
 // out: txt-file with only records that where modified since last time
 // is called in runMusitCoremaStitch() and runCoremaStitch()
 async function makeFileOnlyNew(db, tableName, dumpFolder, source) {
-    console.log(chalk.yellow('makeFileOnlyNew'));
+    // console.log(chalk.yellow('makeFileOnlyNew'));
     return new Promise(function (resolve, reject) {
         let pathToFolder = ''
         if (source === "corema") { pathToFolder = pathToCoremaDumpsForPortal }
