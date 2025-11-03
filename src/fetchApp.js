@@ -206,13 +206,13 @@ async function downloadIPT(fileList) {
 async function getFilesAllMuseum() {
     try {
         makeFolders(basePath)
-        // await download(fileListUm)
-        // await download(fileListTmu)
-        // await download(fileListNbh)
-        // await downloadIPT(fileListNbh)
+        await download(fileListUm)
+        await download(fileListTmu)
+        await download(fileListNbh)
+        await downloadIPT(fileListNbh)
         await download(fileListNhm)
-        // await downloadIPT(fileListNhm)
-        // await downloadCorema(fileListNhm)
+        await downloadIPT(fileListNhm)
+        await downloadCorema(fileListNhm)
         
     } catch (error) {
         console.log(error);   
