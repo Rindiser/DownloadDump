@@ -55,7 +55,8 @@ function makeFolders(basePath) {
 const fsRenameFiles = (oldName,newName) => {
     fs.rename(oldName, newName, (err) => {
         if (err){
-            if (!err.includes('media')) {
+            // console.log(err.path)
+            if (!err.path.includes('media')) {
             console.log(chalk.red('Rename error: ' + err))
             }
         } 
@@ -107,7 +108,7 @@ async function download (fileList) {
             const file = fileList[i];
             // console.log('her kommer source: ' + file.source);
             if (file.source === "musit") { 
-                continue
+                // continue
                 let fileName = path.join(pathToMusitDumps,`${file.zipFileName}.zip`)
                 // Attempt to download the file
                 const response = await fetch(file.url, { signal: controller.signal });
