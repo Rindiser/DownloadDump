@@ -559,6 +559,7 @@ async function processMediaLineByLine(mediaFileWithPath, currentColl, samlingsOb
 
 //hovedtall
 const main = async function (file, museum)  {
+    console.log(file)
 
     // const currentMuseum = museum
     // museum = museum + '/'

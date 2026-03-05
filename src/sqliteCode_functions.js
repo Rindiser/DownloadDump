@@ -77,7 +77,7 @@ async function createDatabase(file, source, mainTable, collection) {
                     .run("CREATE TABLE preparation ( coreid TEXT, preparationType TEXT, preparationMaterials TEXT, preparedBy TEXT, preparationDate TEXT )")
                     .run("CREATE TABLE preservation ( coreid TEXT, preservationType TEXT )")
                     .run("CREATE TABLE resourcerelationship ( coreid TEXT, relatedResourceID TEXT, relationshipOfResource TEXT, relationshipAccordingTo TEXT, relationshipEstablishedDate TEXT, relationshipRemarks TEXT , cleanCatalogNumberRecRel INTEGER, relCollectionCode TEXT)")
-                    .run("CREATE TABLE simpledwc ( id TEXT, type TEXT, modified TEXT, rightsHolder TEXT, accessRights TEXT, collectionID TEXT, datasetID TEXT, institutionCode TEXT, collectionCode TEXT, ownerInstitutionCode TEXT, basisOfRecord TEXT, informationWithheld TEXT, occurrenceID TEXT, catalogNumber TEXT, recordNumber TEXT, recordedBy TEXT, sex TEXT, lifeStage TEXT, preparations TEXT, disposition TEXT, associatedMedia TEXT, organismID TEXT, materialSampleID TEXT, eventDate TEXT, country TEXT, stateProvince TEXT, county TEXT, locality TEXT, minimumElevationInMeters TEXT, decimalLatitude TEXT, decimalLongitude TEXT, identificationQualifier TEXT, identifiedBy TEXT, dateIdentified TEXT, scientificName TEXT, 'order' TEXT, family TEXT, genus TEXT, specificEpithet TEXT, infraspecificEpithet TEXT, taxonRank TEXT, scientificNameAuthorship TEXT, typeStatus TEXT , cleanCatalogNumber INTEGER)")
+                    .run("CREATE TABLE simpledwc ( id TEXT, type TEXT, modified TEXT, rightsHolder TEXT, accessRights TEXT, collectionID TEXT, datasetID TEXT, institutionCode TEXT, collectionCode TEXT, ownerInstitutionCode TEXT, basisOfRecord TEXT, informationWithheld TEXT, occurrenceID TEXT, catalogNumber TEXT, recordNumber TEXT, recordedBy TEXT, sex TEXT, lifeStage TEXT, preparations TEXT, disposition TEXT, associatedMedia TEXT, organismID TEXT, materialSampleID TEXT, eventDate TEXT, country TEXT, stateProvince TEXT, county TEXT, locality TEXT, minimumElevationInMeters TEXT, decimalLatitude TEXT, decimalLongitude TEXT, identificationQualifier TEXT, identifiedBy TEXT, dateIdentified TEXT, scientificName TEXT, 'order' TEXT, family TEXT, genus TEXT, specificEpithet TEXT, infraspecificEpithet TEXT, taxonRank TEXT, scientificNameAuthorship TEXT, typeStatus TEXT , cleanCatalogNumber INTEGER, approvedDate TEXT)")
                     .run(`CREATE TABLE ${mainTable} ( modified TEXT, institutionCode TEXT, collectionCode TEXT, basisOfRecord TEXT, catalogNumber TEXT, scientificName TEXT, scientificNameAuthorship TEXT, kingdom TEXT, phylum TEXT, class TEXT, 'order' TEXT, family TEXT, genus TEXT, specificEpithet TEXT, infraspecificEpithet TEXT, identifiedBy TEXT, dateIdentified TEXT, typeStatus TEXT, recordNumber TEXT, fieldNumber TEXT, recordedBy TEXT, eventDate TEXT, continent TEXT, country TEXT, stateProvince TEXT, county TEXT, locality TEXT, decimalLongitude TEXT, decimalLatitude TEXT, coordinateUncertaintyInMeters TEXT, verbatimElevation TEXT, verbatimDepth TEXT, sex TEXT, lifeStage TEXT, preparations TEXT, individualCount TEXT, otherCatalogNumbers TEXT, occurrenceRemarks TEXT, samplingProtocol TEXT, identificationQualifier TEXT, habitat TEXT, associatedTaxa TEXT, georeferenceRemarks TEXT, verbatimCoordinates TEXT, verbatimSRS TEXT, associatedMedia TEXT, CreativeCommonsLicense TEXT, ArtObsID TEXT, occurrenceID TEXT, UTMsone TEXT, UTMX TEXT, UTMY TEXT, datasetName TEXT, createdDate TEXT, bioGeoRegion TEXT, recordedById TEXT, identifiedById TEXT , cleanCatalogNumber INTEGER)`)
             })
         } else if (source === "corema") {
@@ -89,7 +89,7 @@ async function createDatabase(file, source, mainTable, collection) {
                     .run("CREATE TABLE preparation ( coreid TEXT, preparationType TEXT, preparationMaterials TEXT, preparedBy TEXT, preparationDate TEXT )")
                     .run("CREATE TABLE preservation ( coreid TEXT, preservationType TEXT )")
                     .run("CREATE TABLE resourcerelationship ( coreid TEXT, relatedResourceID TEXT, relationshipOfResource TEXT, relationshipAccordingTo TEXT, relationshipEstablishedDate TEXT, relationshipRemarks TEXT , cleanCatalogNumberRecRel INTEGER, relCollectionCode TEXT)")
-                    .run("CREATE TABLE simpledwc ( id TEXT, type TEXT, modified TEXT, rightsHolder TEXT, accessRights TEXT, collectionID TEXT, datasetID TEXT, institutionCode TEXT, collectionCode TEXT, ownerInstitutionCode TEXT, basisOfRecord TEXT, informationWithheld TEXT, occurrenceID TEXT, catalogNumber TEXT, recordNumber TEXT, recordedBy TEXT, sex TEXT, lifeStage TEXT, preparations TEXT, disposition TEXT, associatedMedia TEXT, organismID TEXT, materialSampleID TEXT, eventDate TEXT, country TEXT, stateProvince TEXT, county TEXT, locality TEXT, minimumElevationInMeters TEXT, decimalLatitude TEXT, decimalLongitude TEXT, identificationQualifier TEXT, identifiedBy TEXT, dateIdentified TEXT, scientificName TEXT, 'order' TEXT, family TEXT, genus TEXT, specificEpithet TEXT, infraspecificEpithet TEXT, taxonRank TEXT, scientificNameAuthorship TEXT, typeStatus TEXT , cleanCatalogNumber INTEGER)")
+                    .run("CREATE TABLE simpledwc ( id TEXT, type TEXT, modified TEXT, rightsHolder TEXT, accessRights TEXT, collectionID TEXT, datasetID TEXT, institutionCode TEXT, collectionCode TEXT, ownerInstitutionCode TEXT, basisOfRecord TEXT, informationWithheld TEXT, occurrenceID TEXT, catalogNumber TEXT, recordNumber TEXT, recordedBy TEXT, sex TEXT, lifeStage TEXT, preparations TEXT, disposition TEXT, associatedMedia TEXT, organismID TEXT, materialSampleID TEXT, eventDate TEXT, country TEXT, stateProvince TEXT, county TEXT, locality TEXT, minimumElevationInMeters TEXT, decimalLatitude TEXT, decimalLongitude TEXT, identificationQualifier TEXT, identifiedBy TEXT, dateIdentified TEXT, scientificName TEXT, 'order' TEXT, family TEXT, genus TEXT, specificEpithet TEXT, infraspecificEpithet TEXT, taxonRank TEXT, scientificNameAuthorship TEXT, typeStatus TEXT , cleanCatalogNumber INTEGER, approvedDAte TEXT)")
             })
         }
         return db
@@ -179,35 +179,40 @@ async function makeNewMycFile(fungus2,lichen2) {
 //     source (string, "musit" or "corema")
 // out: txt-file with only records that where modified since last time
 // is called in runMusitCoremaStitch() and runCoremaStitch()
+// await makeFileOnlyNew(db, 'simpledwc', coremaFolder, 'corema')
 async function makeFileOnlyNew(db, tableName, dumpFolder, source) {
+    console.log(dumpFolder)
     // console.log(chalk.yellow('makeFileOnlyNew'));
     return new Promise(function (resolve, reject) {
         let pathToFolder = ''
-        if (source === "corema") { pathToFolder = pathToCoremaDumpsForPortal }
-        else if (source === "musit") { pathToFolder = pathToMusitDumps }
-        db.all(`SELECT MAX(modified) AS modifiedDate, MAX(approvedDate) AS approvedDate FROM ${tableName}`, (err, latestModified) => {
+        let modDate = ''
+        if (source === "corema") { 
+            pathToFolder = pathToCoremaDumpsForPortal
+            modDate = 'modified'
+        }
+        else if (source === "musit") {
+            pathToFolder = pathToMusitDumps
+            modDate = 'approvedDate'
+        }
+        db.all(`SELECT MAX(modified) AS modifiedDate, MAX(${modDate}) AS approvedDate FROM ${tableName}`, (err, latestModified) => {
             if (err) { console.log(chalk.red('makeFileOnlyNew har følgende feil line 183: ') + err.message);}
-            // console.log('latestModified line 185: ')
-            // console.log(latestModified[0].modifiedDate.getDate())
             let newFileRows = []
-            const date = new Date(latestModified[0].modifiedDate)
-            // const date = Date.parse(latestModified[0].modifiedDate)
-            // console.log(date)
-            const dateArray = latestModified[0].modifiedDate.split('T')
-            // const date2 = `${date.getFullYear()}-${date.getMonth()}-${date.getDate}`
-            // console.log(date2)
+            let dateArray = []
+            if(latestModified[0].modifiedDate) { dateArray = latestModified[0].modifiedDate.split('T')}
             let file = ''
             if (tableName === 'simpledwc') { 
                 file = path.join(pathToFolder, dumpFolder, tableName + '.txt')
             } else {
                 file = path.join(pathToFolder, dumpFolder, tableName + '2.txt')
             }
-            // console.log('file hva er du?: ' + file);
             fs.createReadStream(file)
                 .pipe(csvParser({ "separator": "\t" }))
                 .on('data', (row) => {
                     if(latestModified) {
-                        if (String(dateArray[0]) < row.modified) {
+                        let dArray = row.modified.split('T')
+                        if (String(dateArray[0]) < dArray[0]) {
+                            console.log(String(dateArray[0]))
+                            console.log(dArray[0])
                             newFileRows.push(row)
                         } else if(source=="musit" && String(dateArray[0]) < row.approvedDate) {
                             newFileRows.push(row)
@@ -240,30 +245,37 @@ async function makeOtherFileOnlyNew(tableName, coremaFolder) {
         let newOtherFileRows = []
         try {
             
-
-        fs.createReadStream(path.join(pathToCoremaDumpsForPortal, coremaFolder, 'simpledwc_new.txt'))
+            fs.createReadStream(path.join(pathToCoremaDumpsForPortal, coremaFolder, 'simpledwc_new.txt'))
             .pipe(csvParser({ "separator": "\t" }))
             .on('data', (row) => {
+                // put all occurrenceIDs from simpledwc_new-file into array newOccIDs
                 newOccIDs.push(row.occurrenceID)
+                
             })
             .on('end', () => {
+                
                 if (!fs.existsSync(path.join(pathToCoremaDumpsForPortal, coremaFolder, tableName + '.txt'))) {
                     // !fs.existsSync(`${pathToCoremaDumpsForPortal}${coremaFolder}/${tableName}.txt`)
                     resolve('success')
                 } else {
+               
+                    // read through old other-file (e.g. resourcerelationship)
                     fs.createReadStream(path.join(pathToCoremaDumpsForPortal, coremaFolder, `${tableName}.txt`))
-                        .pipe(csvParser({ "separator": "\t" }))
-                        .on('data', (row2) => {
-                            if (newOccIDs.includes(row2.coreid)) {
-                                newOtherFileRows.push(row2)
-                            }
-                        }).on('end', () => {
-                            let newOtherFileResult = papa.unparse(newOtherFileRows, { delimiter: "\t" })
-                            const outfilePathLocal = path.join(pathToCoremaDumpsForPortal, coremaFolder);
-                            const outfile = path.join(outfilePathLocal, `${tableName}_new.txt`);
-                            fs.writeFileSync(outfile, newOtherFileResult)
-                            resolve('success')
-                        })
+                    .pipe(csvParser({ "separator": "\t" }))
+                    // if simpledwc-new file contains a record alrady in other-file, add the line from other-file to new array newOtherFileRows
+                    // but what if not? then it should be added....? it assumes that all new entries in other-file is marked as modification in simpledwc... this should add up.
+                    .on('data', (row2) => {
+                      
+                        if (newOccIDs.includes(row2.coreid)) {
+                            newOtherFileRows.push(row2)
+                        }
+                    }).on('end', () => {
+                        let newOtherFileResult = papa.unparse(newOtherFileRows, { delimiter: "\t" })
+                        const outfilePathLocal = path.join(pathToCoremaDumpsForPortal, coremaFolder);
+                        const outfile = path.join(outfilePathLocal, `${tableName}_new.txt`);
+                        fs.writeFileSync(outfile, newOtherFileResult)
+                        resolve('success')
+                    })
                 }
             })
         } catch (error) {
@@ -275,6 +287,7 @@ async function makeOtherFileOnlyNew(tableName, coremaFolder) {
 
 // removes double quotes and part of header containing ":" in musit-dumpfile, changes encoding to utf8 (from possibly utf-8-bom)
 // in: infile (string, name of musit-dumpfile)
+// out: outfile (string, name of original file, + "2")
 async function changeEncoding(infile) {
     return new Promise(function (resolve, reject) {
         if (!fs.existsSync(infile)) { 
@@ -343,8 +356,6 @@ async function fillTable(db, tablename, filename, update) {
                 fs.createReadStream(filename)
                     .pipe(csvParser({ separator: "\t"}))
                     .on('data', (row) => {
-                        
-// console.log(row)
                         if (!filename.includes('corema')) {  // i.e. musitfile. if-statement only works because the corema-files lie in a folder named smth with "corema", so "corema" is in the file-path   
                             db.serialize(() => {
                                 let indexOfDash // I used this in line 268, but removed it, don't remember why. as of june -23, is not used
@@ -361,7 +372,6 @@ async function fillTable(db, tablename, filename, update) {
                                 row.habitat, row.associatedTaxa, row.georeferenceRemarks, row.verbatimCoordinates, row.verbatimSRS, row.associatedMedia, row.CreativeCommonsLicense, row.ArtObsID, row.occurrenceID, row.UTMsone, row.UTMX, row.UTMY, row.datasetName, row.createdDate, row.bioGeoRegion, row.recordedById, row.identifiedById, row.approvedDate)
                             })
                         } else if (tablename == 'amplification') {
-                            // console.log(row)
                             db.serialize(() => {
                                 if (update === 'update') { db.run(`DELETE FROM amplification WHERE coreid = "${row.coreid}"`) }
                                 db.prepare(`INSERT INTO amplification (coreid, geneticAccessionURI, geneticAccessionNumber, BOLDProcessID) VALUES (?,?,?,?)`).run(row.coreid, row.geneticAccessionURI, row.geneticAccessionNumber, row.BOLDProcessID)
@@ -393,11 +403,14 @@ async function fillTable(db, tablename, filename, update) {
                             })
                         } else if (tablename == 'resourcerelationship') {
                             db.serialize(() => {
+                                console.log(row)
                                 if (update === 'update') { db.run(`DELETE FROM resourcerelationship WHERE coreid = "${row.coreid}"`) }
                                 db.prepare(`INSERT INTO ${tablename} (coreid, relatedResourceID, relationshipOfResource, relationshipAccordingTo, relationshipEstablishedDate, relationshipRemarks) VALUES (?,?,?,?,?,?)`).run(row.coreid, row.relatedResourceID, row.relationshipOfResource, row.relationshipAccordingTo, row.relationshipEstablishedDate, row.relationshipRemarks)
+                            
                             })
                         } else if (tablename == 'simpledwc') {
                             db.serialize(() => {
+                                console.log(row)
                                 if (update === 'update') { db.run(`DELETE FROM simpledwc WHERE occurrenceID = "${row.occurrenceID}"`) }
                                 db.prepare(`INSERT INTO ${tablename} (type, modified, rightsHolder, accessRights, collectionID, datasetID, institutionCode, collectionCode, ownerInstitutionCode, basisOfRecord, informationWithheld, occurrenceID, catalogNumber, recordNumber, recordedBy, sex, lifeStage, preparations, disposition, associatedMedia, organismID, materialSampleID, eventDate, country, stateProvince,
                                 county, locality, minimumElevationInMeters, decimalLatitude, decimalLongitude, identificationQualifier, identifiedBy, dateIdentified, scientificName, "order", family, genus, specificEpithet, infraspecificEpithet, taxonRank, scientificNameAuthorship, typeStatus) 
@@ -721,6 +734,7 @@ simpledwc.occurrenceID as itemID, organismID, materialSampleID, institutionCode,
 // out: processedRows (?)
 // called in runMusitCoremaStitch()
 const itemToArraysOnSameLine = (rows, basedOn) => {
+   
     // go through all objects, put organism ids in array
     // if object exist in array, transform (or add) relevant properties to arrays in that object, and add item-info to object
     let processedRows = []
@@ -734,7 +748,9 @@ const itemToArraysOnSameLine = (rows, basedOn) => {
                 processedRows.push(rows[i])
             }
         } else if (rows[i].organismID != null) {
+            // if (rows[i].organismID == 'urn:uuid:5b357c5e-8c0d-5b47-9062-982c119e1cde') console.log(rows[i])
             if (rows[i].organismID == rows[i + 1].organismID) { // next line is item of same organism
+                
                 if (existingRow == 'nothing') { // first of two or more items
                     rows[i].fullCatalogNumber = [rows[i].fullCatalogNumber]
                     rows[i].materialSampleType = [rows[i].materialSampleType]
@@ -945,6 +961,7 @@ async function runCoremaStitch(collection, coremaFile, coremaFolder, outfile, up
     
     let fileSuffix = ''
     // find new or newly changed records in simpledwc and put in separate file (_new)
+   
     if (update === 'update') {
         await makeFileOnlyNew(db, 'simpledwc', coremaFolder, 'corema')
         await makeOtherFileOnlyNew('amplification', coremaFolder)
@@ -1210,21 +1227,9 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     db = await createDatabase(dataBaseFile, "musit", musitFile, collection)
 
     let fileSuffix = ''
-    // make new dumpfiles with only records that have been changed since last time
-    if (update === 'update') {      
-        await makeFileOnlyNew(db, musitFile, musitFile, 'musit')
-        await makeFileOnlyNew(db, 'simpledwc', coremaFolder, 'corema')
-        await makeOtherFileOnlyNew('amplification', coremaFolder)
-        await makeOtherFileOnlyNew('materialsample', coremaFolder)
-        await makeOtherFileOnlyNew('multimedia', coremaFolder)
-        await makeOtherFileOnlyNew('permit', coremaFolder)
-        await makeOtherFileOnlyNew('preparation', coremaFolder)
-        await makeOtherFileOnlyNew('preservation', coremaFolder)
-        await makeOtherFileOnlyNew('resourcerelationship', coremaFolder)
-        fileSuffix = '_new'
-
-    }    
-    await changeEncoding(path.join(pathToMusitDumps, musitFile, `${musitFile}${fileSuffix}.txt`));
+   
+    // jeg tror jeg har lagt til dette, for å få med første header i darwin-core-filene. resultatfil får 2-tall (bortsett fra simpledwc!!!!)
+    // await changeEncoding(path.join(pathToMusitDumps, musitFile, `${musitFile}${fileSuffix}.txt`));
     await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `amplification${fileSuffix}.txt`));
     await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `materialsample${fileSuffix}.txt`));
     await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `multimedia${fileSuffix}.txt`));
@@ -1232,6 +1237,30 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `preparation${fileSuffix}.txt`));
     await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `preservation${fileSuffix}.txt`));
     await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `resourcerelationship${fileSuffix}.txt`));
+    await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `simpledwc${fileSuffix}.txt`));
+    // make new dumpfiles with only records that have been changed since last time. får suffix "_new"
+    if (update === 'update') {      
+        await makeFileOnlyNew(db, musitFile, musitFile, 'musit')
+        await makeFileOnlyNew(db, 'simpledwc', coremaFolder, 'corema')
+        await makeOtherFileOnlyNew('amplification2', coremaFolder)
+        await makeOtherFileOnlyNew('materialsample2', coremaFolder)
+        await makeOtherFileOnlyNew('multimedia2', coremaFolder)
+        await makeOtherFileOnlyNew('permit2', coremaFolder)
+        await makeOtherFileOnlyNew('preparation2', coremaFolder)
+        await makeOtherFileOnlyNew('preservation2', coremaFolder)
+        await makeOtherFileOnlyNew('resourcerelationship2', coremaFolder)
+        fileSuffix = '_new'
+
+    }    
+    // endrer coding på new-filene (fordi de er sikkert utf8bom), de får _new2-ending
+    await changeEncoding(path.join(pathToMusitDumps, musitFile, `${musitFile}${fileSuffix}.txt`));
+    await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `amplification2${fileSuffix}.txt`));
+    await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `materialsample2${fileSuffix}.txt`));
+    await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `multimedia2${fileSuffix}.txt`));
+    await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `permit2${fileSuffix}.txt`));
+    await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `preparation2${fileSuffix}.txt`));
+    await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `preservation2${fileSuffix}.txt`));
+    await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `resourcerelationship2${fileSuffix}.txt`));
     await changeEncoding(path.join(pathToCoremaDumpsForPortal, coremaFolder, `simpledwc${fileSuffix}.txt`));
     
     // console.log('sqliteCode_functions linje  1298')
@@ -1250,16 +1279,15 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
     
         // fill or update tables from musit- and coremadumpfiles
     await fillTable(db, `${musitFile}`, path.join(pathToMusitDumps, musitFile, `${musitFile}${fileSuffix}2.txt`), update);
-    await fillTable(db, 'amplification', path.join(pathToCoremaDumpsForPortal, coremaFolder, `amplification${fileSuffix}2.txt`), update);
-    await fillTable(db, 'materialsample', path.join(pathToCoremaDumpsForPortal, coremaFolder, `materialsample${fileSuffix}2.txt`), update);
-    await fillTable(db, 'multimedia', path.join(pathToCoremaDumpsForPortal, coremaFolder, `multimedia${fileSuffix}2.txt`), update);
-    await fillTable(db, 'permit', path.join(pathToCoremaDumpsForPortal, coremaFolder, `permit${fileSuffix}2.txt`), update);
-    await fillTable(db, 'preparation', path.join(pathToCoremaDumpsForPortal, coremaFolder, `preparation${fileSuffix}2.txt`), update);
-    await fillTable(db, 'preservation', path.join(pathToCoremaDumpsForPortal, coremaFolder, `preservation${fileSuffix}2.txt`), update);
-    await fillTable(db, 'resourcerelationship', path.join(pathToCoremaDumpsForPortal, coremaFolder, `resourcerelationship${fileSuffix}2.txt`), update);
-    await fillTable(db, 'simpledwc', path.join(pathToCoremaDumpsForPortal, coremaFolder, `simpledwc${fileSuffix}2.txt`), update);
+    await fillTable(db, 'amplification', path.join(pathToCoremaDumpsForPortal, coremaFolder, `amplification2${fileSuffix}2.txt`), update);
+    await fillTable(db, 'materialsample', path.join(pathToCoremaDumpsForPortal, coremaFolder, `materialsample2${fileSuffix}2.txt`), update);
+    await fillTable(db, 'multimedia', path.join(pathToCoremaDumpsForPortal, coremaFolder, `multimedia2${fileSuffix}2.txt`), update);
+    await fillTable(db, 'permit', path.join(pathToCoremaDumpsForPortal, coremaFolder, `permit2${fileSuffix}2.txt`), update);
+    await fillTable(db, 'preparation', path.join(pathToCoremaDumpsForPortal, coremaFolder, `preparation2${fileSuffix}2.txt`), update);
+    await fillTable(db, 'preservation', path.join(pathToCoremaDumpsForPortal, coremaFolder, `preservation2${fileSuffix}2.txt`), update);
+    await fillTable(db, 'resourcerelationship', path.join(pathToCoremaDumpsForPortal, coremaFolder, `resourcerelationship2${fileSuffix}2.txt`), update);
+    await fillTable(db, 'simpledwc', path.join(pathToCoremaDumpsForPortal, coremaFolder, `simpledwc2${fileSuffix}2.txt`), update);
     
-
     let samling
     let prefix
     let length
@@ -1281,6 +1309,7 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
 
     const start = coremaFolder.length + 2
     outfile = outfilePath + outfile
+
 
 
     return new Promise(function (resolve, reject) { // if we use promise, we cannot use await inside
@@ -1396,16 +1425,15 @@ async function runMusitCoremaStitch(collection, musitFile, coremaFolder, outfile
 async function mainSQLiteFunction(update) {
 
     const coremaTasks = [
-        ['birds', 'no_file', 'NHMO-BI', 'birds_stitched.txt'],
-        ['mammals', 'no_file', 'NHMO-DMA', 'mammals_stitched.txt'],
-        ['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
         ['DNA_other', 'no_file', 'NHMO-DOT', 'dna_other_stitched.txt'],
         ['invertebrates', 'no_file', 'NHMO-IN', 'invertebrates_stitched.txt'],
         ['birds', 'no_file', 'NHMO-BI', 'birds_stitched.txt'],
         ['mammals', 'no_file', 'NHMO-DMA', 'mammals_stitched.txt'],
-        ['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
-        ['DNA_other', 'no_file', 'NHMO-DOT', 'dna_other_stitched.txt'],
-        ['invertebrates', 'no_file', 'NHMO-IN', 'invertebrates_stitched.txt']
+        // //brukes ikke mer['fish_herptiles', 'no_file', 'NHMO-DFH', 'dna_fish_herptiles_stitched.txt'],
+        ['fish', 'no_file', 'NHMO-FI', 'fish_stitched.txt'],
+        ['herptiles', 'no_file', 'NHMO-AR', 'herptiles_stitched.txt'],
+        ['fishscales', 'no_file', 'NHMO-DFH', 'fishscales_stitched.txt'],
+        ['lophophorates', 'no_file', 'NHMO-LO', 'lophophorates_stitched.txt']
        
     ]
 
@@ -1424,19 +1452,14 @@ async function mainSQLiteFunction(update) {
 
     try {
         for (const task of coremaTasks) {
-            // console.log(`Starting runCoremaStitch ${chalk.blue(task[0])}`);
             await runCoremaStitch(...task, update);
-            // console.log(`runCoremaStitch ${chalk.green(task[0])} completed`);
-
+ 
         }
 
         for (const task of musitTasks) {
-            // console.log(`Starting runMusitCoremaStitch ${chalk.blue(task[0])}`);
             await runMusitCoremaStitch(...task, update);
-            // console.log(`runMusitCoremaStitch ${chalk.green(task[0])} completed`);
         }
 
-        // console.log('All tasks completed');
     } catch (error) {
         console.error(chalk.red(`An error occurred in mainSQLiteFunction(): ${error.message}`));
     }
@@ -1469,6 +1492,8 @@ let update = ''
 update = 'update'
 // update = 'empty_fill'
 mainSQLiteFunction(update)
+
+
 
 module.exports = {
     mainSQLiteFunction

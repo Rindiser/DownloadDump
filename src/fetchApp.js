@@ -53,6 +53,7 @@ function makeFolders(basePath) {
 
 
 const fsRenameFiles = (oldName,newName) => {
+ 
     fs.rename(oldName, newName, (err) => {
         if (err){
             // console.log(err.path)
@@ -70,9 +71,12 @@ const fsRenameFiles = (oldName,newName) => {
 // rename files to include collection-name in file-name
 // in: object from filelist
 async function makeFileNames (zipFile, museum) {
+
     museum = museum + "/"
     const oldPath = pathToMusitDumps
     const newPath = path.join(basePath, 'data')
+    
+    //hvorfor har vi ikke med _stitched her?
     if (zipFile.occurrenceFileSuffix.includes('occurrence')) {
 
         // let oldName = oldPath + zipFile.zipFileName + '/' + zipFile.zipFileName +".txt"
@@ -103,9 +107,10 @@ async function download (fileList) {
     const museum = fileList[0].filMetadata.museum
     console.log('vi laster ned data for: ' + museum)
     try {
-        
+        // gå gjennom hver samling
         for (i = 1, len = fileList.length; i < len; i++) {
             const file = fileList[i];
+            // console.log(file.name)
             // console.log('her kommer source: ' + file.source);
             if (file.source === "musit") { 
                 // continue
@@ -124,7 +129,7 @@ async function download (fileList) {
                 makeFileNames(file, museum);
 
             }  else if (file.source === "loans") {
-            console.log('vi låner');
+           
             
                 const response = await fetch(file.url, { signal: controller.signal });
                 if (!response.ok) {
@@ -150,13 +155,16 @@ async function download (fileList) {
 // Hovedfunksjon II
 // download the coremafiles and unzip
 async function downloadCorema (fileList) {
+    console.log('downloadCorema-files')
     for (i = 1, len = fileList.length; i < len; i++) {
         if (fileList[i].source == "corema") {
+            console.log(fileList[i].name)
             pathToCoremaDumps
             let fileName = path.join( pathToCoremaDumps, fileList[i].akronym, fileList[i].akronym + '.zip')
             // extract all files from zip-file in coremaDump-folder to local coremaDump-folder for portal
-            console.log(fileName)
+            
             try {
+            console.log(fileName)    
                 const zip = new AdmZip(fileName);
                 // extracts everything, overwrite = true
                 zip.extractAllTo(path.join(pathToCoremaDumpsForPortal + fileList[i].akronym), true)
@@ -207,12 +215,12 @@ async function downloadIPT(fileList) {
 async function getFilesAllMuseum() {
     try {
         makeFolders(basePath)
-        await download(fileListUm)
-        await download(fileListTmu)
-        await download(fileListNbh)
-        await downloadIPT(fileListNbh)
-        await download(fileListNhm)
-        await downloadIPT(fileListNhm)
+        // await download(fileListUm)
+        // await download(fileListTmu)
+        // await download(fileListNbh)
+        // await downloadIPT(fileListNbh)
+        // await download(fileListNhm)
+        // await downloadIPT(fileListNhm)
         await downloadCorema(fileListNhm)
         
     } catch (error) {
